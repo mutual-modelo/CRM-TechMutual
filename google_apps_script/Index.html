@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRM & Backoffice Financiero — Asociación Mutual Modelo</title>
+  
+  <!-- Tipografías Oficiales -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- PDF.js para lectura de Recibos en el cliente -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  
+  <!-- CDNs oficiales para QR Generation, Camera Scanning Universal y Leaflet Maps -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <?!= include('Styles'); ?>
+</head>
+<body>
+  <!-- Overlay Global de Carga -->
+  <div id="loader-overlay" class="loader-overlay" style="display:none;">
+    <div class="loader-spinner"></div>
+    <div class="loader-text" id="loader-text">Procesando solicitud...</div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- ESTRUCTURA PRINCIPAL CON SIDEBAR LATERAL IZQUIERDA -->
+  <div class="app-layout">
+    <!-- SIDEBAR LATERAL IZQUIERDA -->
+    <aside id="sidebar-crm" class="sidebar-crm">
+      <div class="sidebar-brand">
+        <div class="brand-logo-wrap">
+          <img id="img-logo-mutual" src="logo.jpg" alt="Mutual Modelo" class="brand-logo" onerror="this.src='/logo.jpg'">
+        </div>
+        <div class="brand-text-block">
+          <span class="brand-eyebrow">Asociación Mutual</span>
+          <h1 class="brand-name">Modelo Entre Ríos</h1>
+          <span class="brand-tagline">CRM & Backoffice Financiero</span>
+        </div>
+      </div>
+
+      <!-- Selector de Operador Activo en el Sidebar -->
+      <div class="sidebar-operator-box">
+        <div class="operator-status-row">
+          <span class="status-indicator-dot"></span>
+          <span class="operator-status-label">Operador en Turno</span>
+        </div>
+        <select id="sel-operador-activo" class="sel-operator-sidebar" onchange="cambiarOperadorActivoUI(this.value)">
+          <option value="Julian">👤 Julian</option>
+          <option value="Melina">👤 Melina</option>
+          <option value="Lucrecia">👤 Lucrecia</option>
+          <option value="Andrea">👤 Andrea</option>
+          <option value="Valentina">👤 Valentina</option>
+          <option value="Nicolas">👤 Nicolas</option>
+        </select>
+      </div>
+
+      <!-- Menú de los 7 Módulos Independientes -->
+      <nav class="sidebar-menu">
+        <div class="menu-heading">MÓDULOS OPERATIVOS (7)</div>
+
+        <button type="button" id="tab-padron-socios" class="menu-item active" onclick="cambiarPantallaCRM('screen-padron-socios', this)">
+          <span class="menu-icon">👥</span>
+          <div class="menu-text-wrap">
+            <span class="menu-item-title">01. Padrón General Socios</span>
+            <span class="menu-item-sub">Búsqueda, filtros y exportación</span>
+          </div>
+        </button>
+
+        <button type="button" id="tab-ficha-socio-360" class="menu-item" onclick="cambiarPantallaCRM('screen-ficha-socio-360', this)">
+          <span class="menu-icon">👤</span>
+          <div class="menu-text-wrap">
+            <span class="menu-item-title">02. Ficha 360° del Socio</span>
+            <span class="menu-item-sub">UIF/INAES, Drive, Familia</span>
+          </div>
+        </button>
+
+        <button type="button" id="tab-simuladores" class="menu-item" onclick="cambiarPantallaCRM('screen-simuladores', this)">
+          <span class="menu-icon">🧮</span>
+          <div class="menu-text-wrap">
+            <span class="menu-item-title">03. Simulador & Originación</span>
+            <span class="menu-item-sub">FEDEM, VIKINGO, Sidecreer</span>
+          </div>
+        </button>
+
+        <button type="button" id="tab-centro-operaciones" class="menu-item" onclick="cambiarPantallaCRM('screen-centro-operaciones', this)">
+          <span class="menu-icon">⚡</span>
+          <div class="menu-text-wrap">
+            <span class="menu-item-title">04. Centro de Operaciones</span>
+            <span class="menu-item-sub">Alertas SLA y Liquidaciones</span>
+          </div>
+          <span id="badge-operaciones-total" class="menu-badge danger">0</span>
+        </button>
+
+        <button type="button" id="tab-comercializadores" class="menu-item" onclick="cambiarPantallaCRM('screen-comercializadores', this)">
+          <span class="menu-icon">🤝</span>
+          <div class="menu-text-wrap">
+            <span class="menu-item-title">05. Comercializadores</span>
+            <span class="menu-item-sub">CRUD y comisiones</span>
+          </div>
+        </button>
+
+        <button type="button" id="tab-carteras-vpn" class="menu-item" onclick="cambiarPantallaCRM('screen-carteras-vpn', this)">
+          <span class="menu-icon">💼</span>
+          <div class="menu-text-wrap">
+            <span class="menu-item-title">06. Cesión & Carteras (VPN)</span>
+            <span class="menu-item-sub">Valuación y auditoría lotes</span>
+          </div>
+        </button>
+
+        <button type="button" id="tab-recibos-ai-webhooks" class="menu-item" onclick="cambiarPantallaCRM('screen-recibos-ai-webhooks', this)">
+          <span class="menu-icon">🤖</span>
+          <div class="menu-text-wrap">
+            <span class="menu-item-title">07. Recibos IA & Webhooks</span>
+            <span class="menu-item-sub">Gemini OCR, Darwin, WhatsApp</span>
+          </div>
+        </button>
+      </nav>
+
+      <!-- Acciones Rápidas en el Sidebar -->
+      <div class="sidebar-quick-actions">
+        <div class="menu-heading">ACCIONES DIRECTAS</div>
+        <button type="button" class="btn-sidebar-quick" onclick="abrirModalSocioUI()">
+          <span>👤 + Nuevo Asociado</span>
+        </button>
+        <button type="button" class="btn-sidebar-quick" onclick="abrirModalAyudaUI()">
+          <span>📄 + Nueva Ayuda / Refi</span>
+        </button>
+        <button type="button" class="btn-sidebar-quick" onclick="abrirModalSeguimientoUI()">
+          <span>🔔 + Registrar Alerta SLA</span>
+        </button>
+      </div>
+
+      <!-- Footer del Sidebar -->
+      <div class="sidebar-footer">
+        <div class="compliance-chip">
+          <span class="shield-icon">🛡️</span>
+          <span>Auditoría UIF / INAES Activa</span>
+        </div>
+        <div class="version-label">Google Apps Script V8 • v3.5.0</div>
+      </div>
+    </aside>
+
+    <!-- ÁREA DE CONTENIDO PRINCIPAL -->
+    <div class="main-wrapper">
+      <!-- Barra Superior Flotante -->
+      <header class="top-nav-bar">
+        <div class="top-bar-left">
+          <div class="global-search-container">
+            <input type="text" id="inp-buscar-dni-global" placeholder="Buscar por DNI o Apellido..." onkeydown="if(event.key==='Enter') buscarSocioGlobalUI()">
+            <button type="button" class="btn-search-trigger" onclick="buscarSocioGlobalUI()">🔍</button>
+          </div>
+        </div>
+
+        <div class="top-bar-right">
+          <button type="button" class="btn-top-action primary" onclick="abrirModalSocioUI()">+ Socio</button>
+          <button type="button" class="btn-top-action success" onclick="abrirModalAyudaUI()">+ Préstamo</button>
+          <div class="user-chip">
+            <span class="user-avatar" id="avatar-operador-letra">J</span>
+            <span class="user-name" id="label-operador-activo">Julian</span>
+          </div>
+        </div>
+      </header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="main-content">
+    
+    <!-- PANTALLA 1: ASOCIADOS & FICHA 360° -->
+    <div id="screen-asociados" class="app-screen active">
+      <!-- Panel Ficha 360° -->
+      <div id="panel-ficha-360" class="card-panel ficha-360-panel" style="display:none;">
+        <div class="panel-header-with-actions">
+          <div class="ficha-title-block">
+            <h2 id="f360-nombre">APELLIDO, NOMBRE</h2>
+            <div class="ficha-subtitles">
+              <span>DNI: <strong id="f360-dni">--</strong></span>
+              <span>Socio N°: <strong id="f360-nro-socio">--</strong></span>
+              <span>Organismo: <strong id="f360-organismo-sector">--</strong></span>
+              <span>Edad: <strong id="f360-edad-condicion">--</strong></span>
+              <span>WhatsApp: <strong id="f360-contacto-cbu">--</strong></span>
+            </div>
+          </div>
+          <div class="ficha-header-actions">
+            <button type="button" class="btn-outline" onclick="abrirModalEditarSocioActualUI()">✏️ Editar Socio</button>
+            <button type="button" class="btn-primary" onclick="simularAyudaDesdeSocioActualUI()">🧮 Simular Préstamo</button>
+            <button type="button" class="btn-close-sm" onclick="cerrarFicha360UI()">✖</button>
+          </div>
+        </div>
+
+        <!-- Banderas y Semáforos Administrativos -->
+        <div id="f360-banderas-container" class="flags-bar"></div>
+
+        <!-- KPIs Financieros del Socio -->
+        <div class="grid-4 kpi-grid-mini">
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label">Sueldo Bruto</div>
+            <div id="f360-sueldo-bruto" class="kpi-mini-val mono">$ 0</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label">Sueldo Neto Ley</div>
+            <div id="f360-sueldo-neto" class="kpi-mini-val mono">$ 0</div>
+          </div>
+          <div class="kpi-mini-card highlight">
+            <div class="kpi-mini-label">Margen Cuota Disp.</div>
+            <div id="f360-margen-disponible" class="kpi-mini-val mono text-emerald">$ 0</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label">Monto Preaprobado</div>
+            <div id="f360-monto-preaprobado" class="kpi-mini-val mono text-blue">$ 0</div>
+          </div>
+        </div>
+
+        <!-- Panel de Legajo en Google Drive -->
+        <div class="drive-legajo-card">
+          <div class="drive-header">
+            <div class="drive-title">📁 Legajo Digital en Google Drive</div>
+            <div class="drive-actions">
+              <button type="button" id="btn-abrir-carpeta-drive-socio" class="btn-drive" onclick="abrirCarpetaDriveSocioActualUI()">
+                📂 Abrir Carpeta Drive
+              </button>
+            </div>
+          </div>
+          <div class="drive-upload-inline">
+            <select id="sel-tipo-doc-socio">
+              <option value="DNI">DNI Frente y Dorso</option>
+              <option value="RECIBO">Recibo de Sueldo</option>
+              <option value="CBU">Constancia CBU Oficial</option>
+              <option value="MUTUO">Mutuo Firmado</option>
+              <option value="PAGARE">Pagaré</option>
+              <option value="LIBRE_DEUDA">Libre Deuda / Certificación</option>
+              <option value="SERVICIO">Factura de Servicio / Domicilio</option>
+            </select>
+            <input type="file" id="inp-file-doc-socio" accept=".pdf,image/*">
+            <button type="button" class="btn-subir-drive" onclick="subirArchivoLegajoSocioUI()">Subir Documento</button>
+          </div>
+        </div>
+
+        <!-- Sub-Grilla de 3 Columnas -->
+        <div class="grid-3 ficha-details-grid">
+          <!-- Col 1: Familiares y Subsidios -->
+          <div class="card-inner">
+            <h3>👨‍👩‍👧 Grupo Familiar & Subsidios</h3>
+            <table class="table-compact">
+              <thead><tr><th>Familiar</th><th>Parentesco</th><th>DNI</th></tr></thead>
+              <tbody id="tbody-f360-familiares"></tbody>
+            </table>
+            <h4 style="margin-top:10px;">Subsidios Mutual</h4>
+            <table class="table-compact">
+              <thead><tr><th>Tipo</th><th>Fecha</th><th>Monto</th></tr></thead>
+              <tbody id="tbody-f360-subsidios"></tbody>
+            </table>
+          </div>
+
+          <!-- Col 2: Historial de Ayudas Económicas -->
+          <div class="card-inner">
+            <h3>💰 Ayudas Económicas del Socio</h3>
+            <table class="table-compact">
+              <thead><tr><th>ID</th><th>Línea</th><th>Cuotas</th><th>Saldo Rest.</th><th>Estado</th></tr></thead>
+              <tbody id="tbody-f360-ayudas"></tbody>
+            </table>
+          </div>
+
+          <!-- Col 3: Seguimientos y Alertas -->
+          <div class="card-inner">
+            <h3>🔔 Bitácora de Seguimientos & Alertas</h3>
+            <table class="table-compact">
+              <thead><tr><th>Fecha</th><th>Detalle</th><th>Estado</th></tr></thead>
+              <tbody id="tbody-f360-seguimientos"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Padrón General de Asociados -->
+      <div class="card-panel">
+        <div class="panel-header-with-actions">
+          <h2>👥 Padrón General de Asociados</h2>
+          <div class="filters-inline">
+            <input type="text" id="filtro-padron-texto" placeholder="Buscar por DNI, Nombre o N° Socio..." oninput="filtrarPadronSociosUI()">
+            <select id="filtro-padron-organismo" onchange="filtrarPadronSociosUI()">
+              <option value="TODOS">Todos los Organismos</option>
+              <option value="CGE">Consejo General de Educación (CGE)</option>
+              <option value="Policía">Policía de Entre Ríos</option>
+              <option value="Salud">Ministerio de Salud</option>
+              <option value="Vialidad">Vialidad Provincial</option>
+              <option value="Municipalidad">Municipalidades</option>
+              <option value="Jubilados">Caja Jubilaciones (Ley 8732)</option>
+            </select>
+            <select id="filtro-padron-alerta-especial" onchange="filtrarPadronSociosUI()">
+              <option value="TODOS">Todos los Estados</option>
+              <option value="LEGALES">Bloqueados Legales</option>
+              <option value="JUBILACION">En Trámite Jubilación</option>
+              <option value="DUPLICADOS">Pagos Duplicados</option>
+              <option value="ALIVIO">Alivio Financiero</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>DNI</th>
+                <th>Apellido y Nombre</th>
+                <th>N° Socio</th>
+                <th>Organismo</th>
+                <th>Sueldo Bruto</th>
+                <th>Margen Cuota</th>
+                <th>Banderas</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-padron-socios"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANTALLA 2: SIMULADORES & RECIBOS -->
+    <div id="screen-simuladores" class="app-screen">
+      <div class="simulator-wrapper vista-comercial-activa" id="contenedor-simuladores">
+        
+        <!-- Barra de Control Superior del Simulador -->
+        <div class="card-panel control-bar-simulador">
+          <div class="sim-header-split">
+            <div class="sim-tool-switch">
+              <button type="button" class="btn-subtool active" onclick="mostrarSubvistaSimulador('calculadoras')">🧮 Simuladores de Planes (FEDEM / Muni / Sidecreer)</button>
+              <button type="button" class="btn-subtool" onclick="mostrarSubvistaSimulador('analizador-recibos')">📄 Analizador de Recibos de Sueldo</button>
+            </div>
+            
+            <!-- Switch Maestro de Vista: Comercial vs Administrativa -->
+            <div class="view-mode-switch" id="contenedor-switch-vista">
+              <button type="button" id="btn-vista-comercial" class="btn-switch active" onclick="activarVistaSimulador('COMERCIAL')">
+                🟢 Vista Comercial (Simple)
+              </button>
+              <button type="button" id="btn-vista-administrativa" class="btn-switch" onclick="activarVistaSimulador('ADMINISTRATIVA')">
+                🛡️ Vista Administrativa (Completa)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBVISTA 1: CALCULADORAS DE PLANES -->
+        <div id="subvista-calculadoras">
+          <!-- Parámetros de Entrada -->
+          <div class="card-panel" id="panel-inputs-simulador">
+            <div class="grid-4">
+              <div>
+                <label>Modo de Cálculo:</label>
+                <select id="sel-modo-calculo-sim" onchange="ejecutarSimulacionEnVivoUI()">
+                  <option value="NETO">💰 Por Monto Neto a Entregar ($)</option>
+                  <option value="CUOTA">🎯 Por Cuota Objetivo / Margen ($)</option>
+                  <option value="LINK_SIDECREER">🔗 Por Monto Link Sidecreer ($)</option>
+                </select>
+              </div>
+              <div>
+                <label>Importe ($):</label>
+                <input type="number" id="inp-sim-valor-principal" value="1000000" step="50000" oninput="ejecutarSimulacionEnVivoUI()">
+              </div>
+              <div>
+                <label>Nombre del Socio:</label>
+                <input type="text" id="inp-sim-nombre-cliente" placeholder="Ej: María Laura Benítez" oninput="actualizarPlantillaWhatsAppUI()">
+              </div>
+              <div>
+                <label>WhatsApp del Socio:</label>
+                <input type="text" id="inp-tel-whatsapp-sim" placeholder="Ej: 3434551290" oninput="actualizarPlantillaWhatsAppUI()">
+              </div>
+            </div>
+            <div class="checkbox-lines-filter">
+              <span>Líneas visibles:</span>
+              <label><input type="checkbox" id="chk-ver-fedem" checked onchange="ejecutarSimulacionEnVivoUI()"> FEDEM Provincial</label>
+              <label><input type="checkbox" id="chk-ver-municipales" checked onchange="ejecutarSimulacionEnVivoUI()"> Municipales VIKINGO / QUAD</label>
+              <label><input type="checkbox" id="chk-ver-sidecreer" checked onchange="ejecutarSimulacionEnVivoUI()"> Tarjeta Sidecreer</label>
+            </div>
+          </div>
+
+          <!-- Las 3 Tablas Oficiales -->
+          <!-- 1. FEDEM PROVINCIAL -->
+          <div class="card-panel" id="card-sim-fedem">
+            <div class="panel-header-with-actions">
+              <h3>🏛️ Línea 1: FEDEM Provincial (6 a 48 Cuotas)</h3>
+              <button type="button" class="btn-outline-sm" onclick="copiarPlanesLineaWA('FEDEM')">📋 Copiar Planes FEDEM p/ WhatsApp</button>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table sim-table">
+                <thead>
+                  <tr>
+                    <th>Plazo</th>
+                    <th>Valor Cuota</th>
+                    <th>Neto a Entregar</th>
+                    <th>Total a Devolver</th>
+                    <th class="solo-vista-admin">Capital Bruto</th>
+                    <th class="solo-vista-admin">Gastos (25%/34%)</th>
+                    <th class="solo-vista-admin">Seguro (0.5%)</th>
+                    <th class="solo-vista-admin">Intereses Fin.</th>
+                    <th class="solo-vista-admin">TNA</th>
+                    <th class="solo-vista-admin">TEM</th>
+                    <th class="solo-vista-admin">TEA</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-sim-fedem"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 2. MUNICIPALES VIKINGO / QUAD -->
+          <div class="card-panel" id="card-sim-municipales">
+            <div class="panel-header-with-actions">
+              <h3>🏢 Línea 2: Municipales — Convenio VIKINGO / QUAD (12 y 24 Cuotas)</h3>
+              <button type="button" class="btn-outline-sm" onclick="copiarPlanesLineaWA('Municipales')">📋 Copiar Planes Municipales p/ WhatsApp</button>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table sim-table">
+                <thead>
+                  <tr>
+                    <th>Plazo</th>
+                    <th>Valor Cuota</th>
+                    <th>Neto a Entregar</th>
+                    <th>Total a Devolver</th>
+                    <th class="solo-vista-admin">Capital Vikingo</th>
+                    <th class="solo-vista-admin">Gastos Otorg.</th>
+                    <th class="solo-vista-admin">Capital QUAD</th>
+                    <th class="solo-vista-admin">CFT TEA</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-sim-municipales"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 3. TARJETA SIDECREER -->
+          <div class="card-panel" id="card-sim-sidecreer">
+            <div class="panel-header-with-actions">
+              <h3>💳 Línea 3: Tarjeta Sidecreer (6 a 48 Cuotas)</h3>
+              <button type="button" class="btn-outline-sm" onclick="copiarPlanesLineaWA('Sidecreer')">📋 Copiar Planes Sidecreer p/ WhatsApp</button>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table sim-table">
+                <thead>
+                  <tr>
+                    <th>Plazo</th>
+                    <th>Valor Cuota</th>
+                    <th>Neto a Entregar</th>
+                    <th>Monto Link Sidecreer</th>
+                    <th class="solo-vista-admin">Capital Bruto</th>
+                    <th class="solo-vista-admin">Gastos Admin</th>
+                    <th class="solo-vista-admin">Intereses Fin.</th>
+                    <th class="solo-vista-admin">TNA</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-sim-sidecreer"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Generador y Editor de Plantillas de WhatsApp -->
+          <div class="card-panel wa-preview-card" id="card-plantilla-whatsapp">
+            <div class="panel-header-with-actions">
+              <h3>📲 Editor de Mensaje Institucional de WhatsApp</h3>
+              <div class="wa-template-selector">
+                <select id="sel-tipo-plantilla-wa" onchange="actualizarPlantillaWhatsAppUI()">
+                  <option value="MULTILINEA">Oferta Multilínea Completa</option>
+                  <option value="FEDEM">Solo FEDEM Todos los Plazos</option>
+                  <option value="MUNI">Solo Municipales 12 y 24 Cuotas</option>
+                  <option value="SIDECREER">Solo Tarjeta Sidecreer</option>
+                </select>
+              </div>
+            </div>
+            <textarea id="txt-plantilla-whatsapp" rows="9" class="wa-textarea"></textarea>
+            <div class="wa-actions-bottom">
+              <button type="button" class="btn-outline" onclick="copiarPlantillaWhatsAppUI()">📋 Copiar al Portapapeles</button>
+              <button type="button" class="btn-whatsapp" onclick="enviarWhatsAppClienteUI()">💬 Enviar por WhatsApp</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBVISTA 2: ANALIZADOR DE RECIBOS DE SUELDO -->
+        <div id="subvista-analizador-recibos" style="display:none;">
+          <div class="card-panel">
+            <h2>📄 Analizador Inteligente de Recibos de Sueldo (OCR Gemini)</h2>
+            <div class="grid-3 receipt-controls">
+              <div>
+                <label>Cargar Archivo PDF o Imagen:</label>
+                <input type="file" id="inp-pdf-recibo" accept=".pdf,image/*">
+              </div>
+              <div>
+                <label>Regla de Afectación de Haberes:</label>
+                <select id="sel-regla-afectacion" onchange="recalcularMargenReciboUI()">
+                  <option value="35% Neto Ley">35% de Haberes Netos de Ley</option>
+                  <option value="40% Neto Ley">40% de Haberes Netos de Ley</option>
+                  <option value="40% Sueldo Bruto">40% de Sueldo Bruto</option>
+                </select>
+              </div>
+              <div style="display:flex; align-items:flex-end;">
+                <button type="button" class="btn-primary" onclick="procesarAnalisisReciboIA_UI()">🤖 Analizar con Agente IA</button>
+              </div>
+            </div>
+
+            <!-- Totales Calculados del Recibo -->
+            <div class="grid-4 receipt-kpis">
+              <div class="kpi-mini-card">
+                <div class="kpi-mini-label">Haberes Computables</div>
+                <div id="lbl-rec-haberes" class="kpi-mini-val mono">$ 0</div>
+              </div>
+              <div class="kpi-mini-card">
+                <div class="kpi-mini-label">Descuentos de Ley</div>
+                <div id="lbl-rec-ley" class="kpi-mini-val mono text-rose">$ 0</div>
+              </div>
+              <div class="kpi-mini-card">
+                <div class="kpi-mini-label">Descuentos Particulares</div>
+                <div id="lbl-rec-particulares" class="kpi-mini-val mono text-amber">$ 0</div>
+              </div>
+              <div class="kpi-mini-card highlight">
+                <div class="kpi-mini-label">Margen Cuota Disponible</div>
+                <div id="lbl-rec-margen-disponible" class="kpi-mini-val mono text-emerald">$ 0</div>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Código</th>
+                    <th>Concepto</th>
+                    <th>Clasificación</th>
+                    <th>Monto ($)</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-items-recibo"></tbody>
+              </table>
+            </div>
+
+            <div style="margin-top:15px; text-align:right;">
+              <button type="button" class="btn-success" onclick="transferirMargenAlSimuladorUI()">➡️ Transferir Margen al Simulador</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANTALLA 3: AYUDAS ECONÓMICAS & LEGAJOS -->
+    <div id="screen-ayudas" class="app-screen">
+      <div class="card-panel">
+        <div class="panel-header-with-actions">
+          <h2>💰 Ayudas Económicas, Legajos & Refinanciaciones</h2>
+          <div class="filters-inline">
+            <button type="button" class="btn-subtool active" onclick="cambiarVistaAyudasUI('kanban')">Vista Kanban</button>
+            <button type="button" class="btn-subtool" onclick="cambiarVistaAyudasUI('tabla')">Vista Tabla</button>
+            <button type="button" class="btn-primary" onclick="abrirModalAyudaUI()">+ Nueva Solicitud</button>
+          </div>
+        </div>
+
+        <!-- Kanban Board de 4 Columnas -->
+        <div id="vista-ayudas-kanban" class="kanban-board">
+          <div class="kanban-column" id="kb-col-solicitado">
+            <div class="kb-col-header">📝 Solicitado (<span class="kb-count">0</span>)</div>
+            <div class="kb-col-body"></div>
+          </div>
+          <div class="kanban-column" id="kb-col-evaluacion">
+            <div class="kb-col-header">🔍 En Evaluación (<span class="kb-count">0</span>)</div>
+            <div class="kb-col-body"></div>
+          </div>
+          <div class="kanban-column" id="kb-col-aprobado">
+            <div class="kb-col-header">✅ Aprobado (<span class="kb-count">0</span>)</div>
+            <div class="kb-col-body"></div>
+          </div>
+          <div class="kanban-column" id="kb-col-liquidado">
+            <div class="kb-col-header">💳 Liquidado (<span class="kb-count">0</span>)</div>
+            <div class="kb-col-body"></div>
+          </div>
+        </div>
+
+        <!-- Tabla Administrativa de Ayudas -->
+        <div id="vista-ayudas-tabla" class="table-responsive" style="display:none;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID Ayuda</th>
+                <th>Socio</th>
+                <th>DNI</th>
+                <th>Línea</th>
+                <th>Solicitado</th>
+                <th>Entregado</th>
+                <th>Cuotas</th>
+                <th>Saldo Restante</th>
+                <th>Estado Trámite</th>
+                <th>Documentación</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-ayudas-general"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANTALLA 4: SEGUIMIENTOS & ALERTAS -->
+    <div id="screen-alertas" class="app-screen">
+      <div class="grid-4 sla-kpis-grid">
+        <div class="kpi-card danger">
+          <div class="kpi-label">VENCIDAS (SLA CRÍTICO)</div>
+          <div id="kpi-alertas-vencidas" class="kpi-value">0</div>
+        </div>
+        <div class="kpi-card warning">
+          <div class="kpi-label">VENCEN HOY</div>
+          <div id="kpi-alertas-hoy" class="kpi-value">0</div>
+        </div>
+        <div class="kpi-card info">
+          <div class="kpi-label">PRÓXIMAS</div>
+          <div id="kpi-alertas-proximas" class="kpi-value">0</div>
+        </div>
+        <div class="kpi-card success">
+          <div class="kpi-label">RESUELTAS</div>
+          <div id="kpi-alertas-resueltas" class="kpi-value">0</div>
+        </div>
+      </div>
+
+      <div class="card-panel" style="margin-top:15px;">
+        <div class="panel-header-with-actions">
+          <h2>🔔 Bitácora General de Seguimientos & Alertas</h2>
+          <div class="filters-inline">
+            <select id="filtro-alertas-estado-sla" onchange="filtrarAlertasUI()">
+              <option value="TODOS">Todas las Alertas</option>
+              <option value="VENCIDA">Solo Vencidas</option>
+              <option value="VENCE_HOY">Vence Hoy</option>
+              <option value="PROXIMA">Próximas</option>
+              <option value="RESUELTA">Resueltas</option>
+            </select>
+            <select id="filtro-alertas-operador" onchange="filtrarAlertasUI()">
+              <option value="TODOS">Todos los Operadores</option>
+            </select>
+            <button type="button" class="btn-primary" onclick="abrirModalSeguimientoUI()">+ Nueva Alerta</button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Fecha/Hora</th>
+                <th>Socio</th>
+                <th>Categoría</th>
+                <th>Prioridad</th>
+                <th>Vencimiento</th>
+                <th>Estado</th>
+                <th>Detalle Gestión</th>
+                <th>Asignado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-seguimientos-alertas"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANTALLA 5: LIQUIDACIONES POR FECHAS -->
+    <div id="screen-liquidaciones" class="app-screen">
+      <div class="card-panel">
+        <h2>📅 Consulta de Liquidaciones de Ayudas por Rango de Fechas</h2>
+        <div class="grid-4 filters-range-grid">
+          <div>
+            <label>Criterio de Fecha:</label>
+            <select id="liq-criterio-fecha">
+              <option value="Fecha_Liquidacion">Fecha de Liquidación</option>
+              <option value="Fecha_Solicitud">Fecha de Solicitud</option>
+            </select>
+          </div>
+          <div>
+            <label>Desde:</label>
+            <input type="date" id="liq-fecha-desde" value="2026-10-01">
+          </div>
+          <div>
+            <label>Hasta:</label>
+            <input type="date" id="liq-fecha-hasta" value="2026-11-30">
+          </div>
+          <div style="display:flex; align-items:flex-end;">
+            <button type="button" class="btn-primary" onclick="ejecutarFiltroLiquidacionesFechasUI()">🔍 Consultar Período</button>
+          </div>
+        </div>
+
+        <!-- 6 KPIs de Tesorería -->
+        <div class="grid-6 kpi-treasury-grid">
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label">Operaciones</div>
+            <div id="kpi-liq-cantidad" class="kpi-mini-val">0</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label">Monto Solicitado</div>
+            <div id="kpi-liq-solicitado" class="kpi-mini-val mono">$ 0</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label">Monto Depositado</div>
+            <div id="kpi-liq-depositado" class="kpi-mini-val mono">$ 0</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label">Retenido Refi.</div>
+            <div id="kpi-liq-retenido-refi" class="kpi-mini-val mono text-amber">$ 0</div>
+          </div>
+          <div class="kpi-mini-card highlight">
+            <div class="kpi-mini-label">Neto Entregado</div>
+            <div id="kpi-liq-neto-efectivo" class="kpi-mini-val mono text-emerald">$ 0</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label">Total a Devolver</div>
+            <div id="kpi-liq-total-devolver" class="kpi-mini-val mono text-purple">$ 0</div>
+          </div>
+        </div>
+
+        <div class="panel-header-with-actions" style="margin-top:20px;">
+          <h3>Planilla Detallada de Operaciones</h3>
+          <div class="actions-group">
+            <button type="button" class="btn-outline-sm" onclick="exportarTablaACSV('tbody-liquidaciones-rango', 'Liquidaciones_Periodo')">📥 Exportar CSV</button>
+            <button type="button" class="btn-outline-sm" onclick="imprimirPlanillaUI('screen-liquidaciones')">🖨️ Imprimir</button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID Ayuda</th>
+                <th>Fecha Liq.</th>
+                <th>Socio</th>
+                <th>Línea</th>
+                <th>Solicitado</th>
+                <th>Depositado</th>
+                <th>Ret. Refi</th>
+                <th>Neto Entregado</th>
+                <th>Total Devolver</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-liquidaciones-rango"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANTALLA 6: COMERCIALIZADORES & COMISIONES -->
+    <div id="screen-comercializadores" class="app-screen">
+      <!-- Padrón de Comercializadores -->
+      <div class="card-panel">
+        <div class="panel-header-with-actions">
+          <h2>🤝 Padrón de Comercializadores & Agentes</h2>
+          <button type="button" class="btn-primary" onclick="abrirModalComercializadorUI()">+ Nuevo Comercializador</button>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre Estudio / Agente</th>
+                <th>CUIT</th>
+                <th>Contacto</th>
+                <th>Base de Cálculo</th>
+                <th>Comisión (%)</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-comercializadores"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Liquidador de Comisiones -->
+      <div class="card-panel" style="margin-top:15px;">
+        <h2>💵 Liquidador Oficial de Comisiones por Rango de Fechas</h2>
+        <div class="grid-4">
+          <div>
+            <label>Comercializador:</label>
+            <select id="comis-sel-comercializador"></select>
+          </div>
+          <div>
+            <label>Desde:</label>
+            <input type="date" id="comis-fecha-desde" value="2026-10-01">
+          </div>
+          <div>
+            <label>Hasta:</label>
+            <input type="date" id="comis-fecha-hasta" value="2026-10-31">
+          </div>
+          <div>
+            <label>Deducciones / Ajustes ($):</label>
+            <input type="number" id="comis-inp-deducciones" value="0">
+          </div>
+        </div>
+        <div style="margin-top:10px; display:flex; gap:10px;">
+          <button type="button" class="btn-primary" onclick="previsualizarComisionesUI()">👁️ Previsualizar Liquidación</button>
+          <button type="button" class="btn-success" onclick="emitirLiquidacionComisionesOficialUI()">📝 Emitir Liquidación Oficial</button>
+        </div>
+
+        <!-- KPIs de Liquidación -->
+        <div class="grid-4" style="margin-top:15px;">
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label">Operaciones Aprobadas</div>
+            <div id="kpi-comis-ops" class="kpi-mini-val">0</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label">Base Acumulada</div>
+            <div id="kpi-comis-base-total" class="kpi-mini-val mono">$ 0</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label">Porcentaje Comisión</div>
+            <div id="kpi-comis-pct" class="kpi-mini-val">0 %</div>
+          </div>
+          <div class="kpi-mini-card highlight">
+            <div class="kpi-mini-label">Neto a Pagar</div>
+            <div id="kpi-comis-neto-pagar" class="kpi-mini-val mono text-emerald">$ 0</div>
+          </div>
+        </div>
+
+        <div class="table-responsive" style="margin-top:15px;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID Ayuda</th>
+                <th>Fecha Liq.</th>
+                <th>Socio</th>
+                <th>Línea</th>
+                <th>Base Aplicada ($)</th>
+                <th>Comisión Generada ($)</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-previsualizacion-comisiones"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANTALLA 7: CARTERAS, CESIONES & IA -->
+    <div id="screen-carteras-ia" class="app-screen">
+      <div class="card-panel">
+        <h2>💼 Gestión Multifiltro de Carteras & Valuación VPN</h2>
+        <div class="grid-4" style="margin-bottom:15px;">
+          <div>
+            <label>Tasa de Descuento Mensual (%):</label>
+            <input type="number" id="cart-tasa-descuento-vpn" value="4.5" step="0.1" onchange="filtrarCarteraAyudasUI()">
+          </div>
+          <div>
+            <label>Titularidad de Cartera:</label>
+            <select id="cart-titular-actual" onchange="filtrarCarteraAyudasUI()">
+              <option value="PROPIA">Cartera Propia Mutual</option>
+              <option value="CEDIDA">Cartera Cedida</option>
+              <option value="TODAS">Todas las Carteras</option>
+            </select>
+          </div>
+          <div>
+            <label>Estado de Cobranza:</label>
+            <select id="cart-estado-cobranza" onchange="filtrarCarteraAyudasUI()">
+              <option value="TODAS">Todos los Estados</option>
+              <option value="Al Día">Al Día</option>
+              <option value="Mora Temprana">Mora Temprana</option>
+            </select>
+          </div>
+          <div style="display:flex; align-items:flex-end;">
+            <button type="button" class="btn-primary" onclick="filtrarCarteraAyudasUI()">🔍 Aplicar Filtros de Cartera</button>
+          </div>
+        </div>
+
+        <!-- KPIs de Valuación de Cartera -->
+        <div class="grid-5 kpi-treasury-grid">
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label">Créditos Seleccionados</div>
+            <div id="kpi-cart-seleccionados" class="kpi-mini-val">0</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label">Capital Original</div>
+            <div id="kpi-cart-capital-original" class="kpi-mini-val mono">$ 0</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label">Flujo Nominal Restante</div>
+            <div id="kpi-cart-flujo-nominal-restante" class="kpi-mini-val mono">$ 0</div>
+          </div>
+          <div class="kpi-mini-card highlight">
+            <div class="kpi-mini-label">Valor Presente Neto (VPN)</div>
+            <div id="kpi-cart-vpn-descontado" class="kpi-mini-val mono text-emerald">$ 0</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label">Quita Estimada</div>
+            <div id="kpi-cart-quita-estimada" class="kpi-mini-val mono text-rose">$ 0</div>
+          </div>
+        </div>
+
+        <div class="panel-header-with-actions" style="margin-top:15px;">
+          <div style="display:flex; gap:10px;">
+            <button type="button" class="btn-outline-sm" onclick="toggleSeleccionarTodosCarteraUI()">☑️ Seleccionar Todos</button>
+            <button type="button" class="btn-outline-sm" onclick="exportarTablaACSV('tbody-cartera-filtrada', 'Cartera_Valuada')">📥 Exportar CSV</button>
+          </div>
+          <button type="button" class="btn-success" onclick="abrirModalCesionCarteraUI()">🤝 Formalizar Cesión de Cartera</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Sel.</th>
+                <th>ID Ayuda</th>
+                <th>Socio</th>
+                <th>Línea</th>
+                <th>Cuotas Rest.</th>
+                <th>Valor Cuota</th>
+                <th>Saldo Nominal</th>
+                <th>VPN Descontado</th>
+                <th>Titular Actual</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-cartera-filtrada"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Consola de IA y Logs en Vivo -->
+      <div class="card-panel" style="margin-top:15px;">
+        <h2>🤖 Consola de Integraciones IA (Gemini, Darwin IA & WhatsApp)</h2>
+        <div class="grid-3">
+          <div>
+            <label>Gemini API Key:</label>
+            <input type="password" id="inp-ia-gemini-key" placeholder="AIzaSy...">
+          </div>
+          <div>
+            <label>Darwin IA Webhook:</label>
+            <input type="text" id="inp-ia-darwin-url" placeholder="https://api.darwinia.com.ar/webhook">
+          </div>
+          <div>
+            <label>WhatsApp Cloud API Token:</label>
+            <input type="password" id="inp-ia-wa-token" placeholder="EAABwz...">
+          </div>
+        </div>
+        <div style="margin-top:10px; text-align:right;">
+          <button type="button" class="btn-primary" onclick="guardarConfiguracionIA_UI()">💾 Guardar Credenciales IA</button>
+        </div>
+
+        <h3 style="margin-top:20px;">Bitácora de Logs de Ejecución IA</h3>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID Log</th>
+                <th>Fecha/Hora</th>
+                <th>Canal</th>
+                <th>Evento</th>
+                <th>DNI</th>
+                <th>Estado</th>
+                <th>Latencia (ms)</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-logs-ia"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+  </div><!-- .main-wrapper -->
+  </div><!-- .app-layout -->
+
+  <!-- ==================== LAS 5 VENTANAS MODALES ==================== -->
+  
+  <!-- MODAL 1: ALTA / EDICIÓN DE SOCIO -->
+  <div id="modal-socio" class="modal-overlay" style="display:none;">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3 id="modal-socio-titulo">Alta / Edición de Asociado</h3>
+        <button type="button" class="btn-close" onclick="cerrarModal('modal-socio')">✖</button>
+      </div>
+      <div class="modal-body">
+        <form id="form-socio" onsubmit="event.preventDefault(); guardarSocioSubmitUI();">
+          <div class="grid-3">
+            <div><label>DNI:</label><input type="text" id="inp-soc-dni" required></div>
+            <div><label>N° Socio:</label><input type="text" id="inp-soc-nrosocio"></div>
+            <div><label>Apellido y Nombre:</label><input type="text" id="inp-soc-nombre" required></div>
+          </div>
+          <div class="grid-3">
+            <div><label>Fecha Nacimiento:</label><input type="date" id="inp-soc-nacimiento"></div>
+            <div><label>Sexo:</label>
+              <select id="inp-soc-sexo"><option value="F">Femenino</option><option value="M">Masculino</option></select>
+            </div>
+            <div><label>Organismo:</label>
+              <input type="text" id="inp-soc-organismo" placeholder="Ej: CGE / Policía / Salud">
+            </div>
+          </div>
+          <div class="grid-3">
+            <div><label>Sueldo Bruto ($):</label><input type="number" id="inp-soc-bruto" value="1000000"></div>
+            <div><label>Afectaciones Ley ($):</label><input type="number" id="inp-soc-ley" value="190000"></div>
+            <div><label>Afectaciones Particulares ($):</label><input type="number" id="inp-soc-particulares" value="100000"></div>
+          </div>
+          <div class="grid-3">
+            <div><label>Teléfono WhatsApp:</label><input type="text" id="inp-soc-telefono"></div>
+            <div><label>CBU / Alias:</label><input type="text" id="inp-soc-cbu"></div>
+            <div><label>Localidad:</label><input type="text" id="inp-soc-localidad" value="Paraná"></div>
+          </div>
+          <h4 style="margin-top:15px;">Banderas y Bloqueos Administrativos</h4>
+          <div class="grid-3">
+            <div>
+              <label>Bloqueado Legales:</label>
+              <select id="inp-soc-legales"><option value="NO">NO</option><option value="SI">SI</option></select>
+            </div>
+            <div>
+              <label>En Trámite Jubilación:</label>
+              <select id="inp-soc-jubilacion"><option value="NO">NO</option><option value="SI">SI</option></select>
+            </div>
+            <div>
+              <label>Pagos Duplicados:</label>
+              <select id="inp-soc-duplicados"><option value="NO">NO</option><option value="SI">SI</option></select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-outline" onclick="cerrarModal('modal-socio')">Cancelar</button>
+            <button type="submit" class="btn-primary">Guardar Asociado</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: ALTA DE AYUDA ECONÓMICA & REFINANCIACIÓN -->
+  <div id="modal-ayuda" class="modal-overlay" style="display:none;">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3>Solicitud de Ayuda Económica & Refinanciación</h3>
+        <button type="button" class="btn-close" onclick="cerrarModal('modal-ayuda')">✖</button>
+      </div>
+      <div class="modal-body">
+        <form id="form-ayuda" onsubmit="event.preventDefault(); guardarAyudaSubmitUI();">
+          <div class="grid-3">
+            <div><label>DNI del Socio:</label><input type="text" id="inp-ayu-dni" required onchange="cargarDatosSocioEnAyudaUI(this.value)"></div>
+            <div><label>Nombre:</label><input type="text" id="inp-ayu-nombre" readonly></div>
+            <div><label>Línea:</label>
+              <select id="inp-ayu-linea">
+                <option value="FEDEM Provincial">FEDEM Provincial</option>
+                <option value="Municipalidad (VIKINGO)">Municipalidad (VIKINGO)</option>
+                <option value="Tarjeta Sidecreer">Tarjeta Sidecreer</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid-3">
+            <div><label>Monto Solicitado ($):</label><input type="number" id="inp-ayu-monto" value="1000000" oninput="calcularRefinanciacionModalUI()"></div>
+            <div><label>Cantidad de Cuotas:</label>
+              <select id="inp-ayu-cuotas">
+                <option value="6">6 cuotas</option>
+                <option value="12" selected>12 cuotas</option>
+                <option value="18">18 cuotas</option>
+                <option value="24">24 cuotas</option>
+                <option value="36">36 cuotas</option>
+                <option value="48">48 cuotas</option>
+              </select>
+            </div>
+            <div><label>Es Refinanciación:</label>
+              <select id="inp-ayu-es-refi" onchange="toggleSeccionRefiUI(this.value)">
+                <option value="NO">NO</option>
+                <option value="SI">SI</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Sección de Refinanciación -->
+          <div id="seccion-refinanciacion" style="display:none; background:#f8fafc; padding:10px; border-radius:8px; margin:10px 0;">
+            <h4>🔄 Créditos Vigentes a Cancelar por Refinanciación</h4>
+            <div id="contenedor-prestamos-refinanciar"></div>
+            <div class="grid-2" style="margin-top:10px;">
+              <div><strong>Monto Retenido p/ Cancelación:</strong> <span id="lbl-refi-retenido" class="mono text-amber">$ 0</span></div>
+              <div><strong>Efectivo Neto a Entregar en Mano:</strong> <span id="lbl-refi-neto-mano" class="mono text-emerald" style="font-size:1.1rem;">$ 0</span></div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-outline" onclick="cerrarModal('modal-ayuda')">Cancelar</button>
+            <button type="submit" class="btn-primary">Registrar Ayuda Económica</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: SEGUIMIENTO Y ALERTA -->
+  <div id="modal-seguimiento" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Registrar Alerta / Seguimiento SLA</h3>
+        <button type="button" class="btn-close" onclick="cerrarModal('modal-seguimiento')">✖</button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="event.preventDefault(); guardarSeguimientoSubmitUI();">
+          <div class="grid-2">
+            <div><label>DNI Socio:</label><input type="text" id="inp-seg-dni" required></div>
+            <div><label>Prioridad:</label>
+              <select id="inp-seg-prioridad">
+                <option value="Media">Media</option>
+                <option value="Alta">Alta</option>
+                <option value="Urgente">Urgente</option>
+                <option value="Baja">Baja</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label>Fecha de Vencimiento de la Alerta:</label>
+            <input type="date" id="inp-seg-fecha-venc" required>
+          </div>
+          <div>
+            <label>Detalle de la Gestión:</label>
+            <textarea id="inp-seg-detalle" rows="3" required></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-outline" onclick="cerrarModal('modal-seguimiento')">Cancelar</button>
+            <button type="submit" class="btn-primary">Guardar Alerta</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: COMERCIALIZADOR -->
+  <div id="modal-comercializador" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Alta de Comercializador</h3>
+        <button type="button" class="btn-close" onclick="cerrarModal('modal-comercializador')">✖</button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="event.preventDefault(); guardarComercializadorSubmitUI();">
+          <div><label>Nombre Estudio / Agente:</label><input type="text" id="inp-com-nombre" required></div>
+          <div class="grid-2">
+            <div><label>CUIT:</label><input type="text" id="inp-com-cuit" required></div>
+            <div><label>Teléfono:</label><input type="text" id="inp-com-tel"></div>
+          </div>
+          <div class="grid-2">
+            <div><label>Base Comisión:</label>
+              <select id="inp-com-base">
+                <option value="Monto_Depositado">Monto Depositado</option>
+                <option value="Neto_Efectivo_Entregado">Neto Efectivo Entregado</option>
+                <option value="Monto_Solicitado">Monto Solicitado</option>
+              </select>
+            </div>
+            <div><label>Porcentaje (%):</label><input type="number" id="inp-com-pct" value="4.5" step="0.1"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-outline" onclick="cerrarModal('modal-comercializador')">Cancelar</button>
+            <button type="submit" class="btn-primary">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 5: CESIÓN DE CARTERA -->
+  <div id="modal-cesion-cartera" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Formalizar Lote de Cesión de Cartera</h3>
+        <button type="button" class="btn-close" onclick="cerrarModal('modal-cesion-cartera')">✖</button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="event.preventDefault(); formalizarCesionCarteraSubmitUI();">
+          <div><label>Entidad Cesionaria / Fideicomiso Destino:</label><input type="text" id="inp-ces-entidad" required value="Fideicomiso Financiero Entre Ríos I"></div>
+          <div class="grid-2">
+            <div><label>CUIT Cesionario:</label><input type="text" id="inp-ces-cuit" value="30-71892019-3"></div>
+            <div><label>Precio Acordado de Venta ($):</label><input type="number" id="inp-ces-precio" required></div>
+          </div>
+          <div><label>Modalidad de Cobranza:</label>
+            <select id="inp-ces-modalidad">
+              <option value="Retención por Recibo CGE">Retención por Recibo CGE</option>
+              <option value="Cobranza por CBU BERSA">Cobranza por CBU BERSA</option>
+              <option value="Cesión Plena">Cesión Plena sin Recurso</option>
+            </select>
+          </div>
+          <div><label>Observaciones:</label><textarea id="inp-ces-obs" rows="2"></textarea></div>
+          <div class="modal-footer">
+            <button type="button" class="btn-outline" onclick="cerrarModal('modal-cesion-cartera')">Cancelar</button>
+            <button type="submit" class="btn-success">Firmar y Ceder Cartera</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <?!= include('Scripts'); ?>
+</body>
+</html>

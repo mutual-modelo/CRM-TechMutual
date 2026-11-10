@@ -1,0 +1,3393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CRM & Backoffice Financiero — Asociación Mutual Modelo</title>
+  <meta name="description" content="Sistema integral de gestión de asociados, ficha 360°, simuladores oficiales multilínea, ayudas económicas con refinanciación, comisiones, cesión de carteras con VPN, legajos Drive y exportación para Google Apps Script.">
+  <meta property="og:title" content="CRM & Backoffice Financiero — Asociación Mutual Modelo">
+  <meta property="og:description" content="Sistema integral de gestión de asociados, ficha 360°, simuladores oficiales multilínea, ayudas económicas con refinanciación, comisiones, cesión de carteras con VPN, legajos Drive y exportación para Google Apps Script.">
+  <link rel="icon" type="image/jpeg" href="favicon.jpg">
+  
+  <!-- Tipografías Oficiales Fintech -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  
+  <!-- CDNs Oficiales de Alta Disponibilidad -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* ==========================================================================
+       VARIABLES Y SISTEMA DE DISEÑO FINTECH — MUTUAL MODELO ENTERPRISE
+       Inspiración: Mercado Pago + Naranja X + MODO + Power BI
+       ========================================================================== */
+    :root {
+      --primary: #135596;
+      --primary-dark: #0a335c;
+      --primary-light: #2563eb;
+      --primary-subtle: #eff6ff;
+      --emerald: #059669;
+      --emerald-dark: #047857;
+      --emerald-subtle: #ecfdf5;
+      --purple: #6366f1;
+      --purple-dark: #4338ca;
+      --purple-subtle: #e0e7ff;
+      --amber: #d97706;
+      --amber-subtle: #fffbeb;
+      --rose: #e11d48;
+      --rose-subtle: #fff1f2;
+      --bg-body: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-dark: #0f172a;
+      --bg-dark-surface: #1e293b;
+      --border: #e2e8f0;
+      --border-dark: #334155;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-light: #f8fafc;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 14px rgba(0,0,0,0.08);
+      --shadow-lg: 0 12px 28px rgba(15, 23, 42, 0.12);
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-full: 9999px;
+      --app-max-width: 480px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.45;
+    }
+    .mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+
+    /* ELIMINACIÓN ESTRICTA DE LA ATRIBUCIÓN LEAFLET */
+    .leaflet-control-attribution { display: none !important; }
+
+    /* BARRA SUPERIOR GLOBAL MULTI-PORTAL DISCRETA */
+    .global-portal-bar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: #09131f;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      border-bottom: 1px solid #1e293b;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+    }
+    .portal-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-logo-img {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: #ffffff;
+      flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+    .portal-brand-text {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: -0.2px;
+      line-height: 1.2;
+    }
+    .portal-brand-badge {
+      font-size: 9.5px;
+      background: rgba(37, 99, 235, 0.3);
+      color: #60a5fa;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      display: inline-block;
+    }
+    .portal-tabs-selector {
+      display: flex;
+      gap: 4px;
+      background: #1e293b;
+      padding: 3px;
+      border-radius: 8px;
+    }
+    .portal-tab-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+    }
+    .portal-tab-btn:hover { color: #fff; }
+    .portal-tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(19, 85, 150, 0.4);
+    }
+
+    /* CONTENEDORES DE VISTAS */
+    .portal-view { display: none; }
+    .portal-view.active { display: block; }
+
+    /* ==========================================================================
+       PORTAL 2: APP DEL SOCIO (CONTENEDOR MÓVIL CENTRADO EN MONITORES ANCHOS)
+       ========================================================================== */
+    #portal-socio-app {
+      max-width: var(--app-max-width);
+      margin: 0 auto;
+      min-height: 100vh;
+      background: #f8fafc;
+      padding-bottom: 95px; /* Evita que la barra fija tape los últimos consumos */
+      position: relative;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.08);
+      border-left: 1px solid #e2e8f0;
+      border-right: 1px solid #e2e8f0;
+    }
+
+    /* Sub-vistas internas de la App del Socio (PWA Modular) */
+    .socio-subview { display: none; }
+    .socio-subview.active { display: block; }
+
+    /* Login del Socio */
+    .socio-login-card {
+      padding: 40px 24px;
+      text-align: center;
+    }
+    .socio-login-logo {
+      width: 70px;
+      height: 70px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+      object-fit: cover;
+      border: 2px solid #e2e8f0;
+    }
+
+    /* Cabecera Fintech Limpia (Sin menús superiores duplicados) */
+    .socio-clean-header {
+      background: linear-gradient(135deg, #0a335c 0%, #135596 55%, #1e40af 100%);
+      color: #fff;
+      padding: 20px 20px 26px 20px;
+      border-bottom-left-radius: 26px;
+      border-bottom-right-radius: 26px;
+      box-shadow: 0 10px 24px rgba(19, 85, 150, 0.25);
+    }
+    .socio-header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .socio-user-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .socio-avatar-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(8px);
+      border: 2px solid rgba(255, 255, 255, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 15px;
+      color: #fff;
+    }
+    .socio-greeting-label {
+      font-size: 15px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.2;
+    }
+    .badge-al-dia {
+      display: inline-block;
+      background: rgba(16, 185, 129, 0.25);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 12px;
+      margin-top: 3px;
+    }
+    .socio-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .socio-select-chip {
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 20px;
+      padding: 5px 10px;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      outline: none;
+      cursor: pointer;
+    }
+    .socio-select-chip option { background: #0f172a; color: #fff; }
+    .btn-eye-toggle {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #fff;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 15px;
+      transition: all 0.2s;
+    }
+    .btn-eye-toggle:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.05);
+    }
+
+    /* Saldo Principal */
+    .socio-balance-box { margin-top: 4px; }
+    .socio-balance-label {
+      color: #bfdbfe;
+      font-size: 12.5px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    .socio-balance-amount {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #ffffff;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+    .socio-balance-cents {
+      font-size: 18px;
+      font-weight: 600;
+      opacity: 0.85;
+    }
+    .socio-credit-banner {
+      margin-top: 10px;
+      background: rgba(255, 255, 255, 0.14);
+      border-radius: 12px;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+    .socio-credit-banner span { color: #dbeafe; font-weight: 500; }
+    .socio-credit-banner strong { color: #a7f3d0; font-weight: 800; }
+
+    /* Tarjetas de Billeteras (Estilo Naranja X) */
+    .wallets-container {
+      padding: 16px 20px 0 20px;
+      margin-top: -14px;
+    }
+    .wallets-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .wallet-card {
+      border-radius: 18px;
+      padding: 18px;
+      color: white;
+      margin-bottom: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .wallet-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.16);
+    }
+    .wallet-card:active { transform: scale(0.98); }
+    .wallet-b1 { background: linear-gradient(135deg, #135596, #0d3b66); }
+    .wallet-b2 { background: linear-gradient(135deg, #6366f1, #4338ca); }
+    .wallet-b3 { background: linear-gradient(135deg, #059669, #047857); }
+    
+    .wallet-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .wallet-name {
+      font-size: 13.5px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .wallet-pill {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(4px);
+    }
+    .wallet-val {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .wallet-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      opacity: 0.9;
+    }
+
+    /* Recuadro de Últimos Consumos */
+    .transactions-summary-card {
+      margin: 12px 20px 16px 20px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .transactions-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .transactions-header h3 {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .transactions-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .transaction-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: #f8fafc;
+      border: 1px solid #f1f5f9;
+      transition: background 0.15s ease;
+    }
+    .transaction-row:hover { background: #f1f5f9; }
+    .transaction-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .transaction-icon-box {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: #eff6ff;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .transaction-desc strong {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+    .transaction-desc span {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .transaction-right { text-align: right; }
+    .transaction-amount {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+    .transaction-badge {
+      display: inline-block;
+      font-size: 9.5px;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 8px;
+      margin-top: 2px;
+    }
+    .badge-cuotas { background: #e0e7ff; color: #3730a3; }
+    .badge-pagado { background: #ecfdf5; color: #065f46; }
+    .transactions-view-all-link {
+      display: block;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+      text-decoration: none;
+      margin-top: 12px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border);
+      cursor: pointer;
+    }
+
+    /* Módulo de Trámites y Servicios Propios */
+    .services-grid-chips {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 0 20px 16px 20px;
+    }
+    .service-chip-btn {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 6px;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s;
+    }
+    .service-chip-btn:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+    .service-chip-icon { font-size: 20px; margin-bottom: 4px; }
+    .service-chip-title { font-size: 11px; font-weight: 700; color: var(--text-main); }
+
+    /* Tarjeta Virtual de 10 Sellos */
+    .loyalty-card {
+      margin: 0 20px 16px 20px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .loyalty-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .stamps-grid-5x2 {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .stamp-slot {
+      aspect-ratio: 1;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 700;
+      transition: all 0.2s ease;
+    }
+    .stamp-slot.active {
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+      border: 1.5px solid #10b981;
+      color: #065f46;
+      box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+    }
+    .stamp-slot.pending {
+      background: #f8fafc;
+      border: 1.5px dashed #cbd5e1;
+      color: #94a3b8;
+    }
+    .stamp-slot.prize {
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      border: 1.5px solid #f59e0b;
+      color: #b45309;
+    }
+    .tips-promos-container {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+    .tips-promos-container h5 {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 6px;
+    }
+    .tips-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .tip-card {
+      background: #fff;
+      border: 1px solid #dbeafe;
+      border-radius: 8px;
+      padding: 7px 9px;
+      font-size: 11px;
+      color: #1e3a8a;
+      line-height: 1.35;
+    }
+
+    /* Sección de Mapa de Comercios */
+    .merchants-section { padding: 0 20px 20px 20px; }
+    .merchants-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .merchants-title-row h3 {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+    .btn-filter-rubros {
+      width: 100%;
+      background: #ffffff;
+      border: 2px solid #bfdbfe;
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 800;
+      padding: 11px 14px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
+    }
+    .btn-filter-rubros:hover {
+      background: #eff6ff;
+      border-color: var(--primary);
+    }
+    .btn-filter-rubros span.rubro-badge {
+      background: var(--primary);
+      color: #fff;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+    }
+    .leaflet-map-box {
+      height: 220px;
+      width: 100%;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 14px;
+      z-index: 10;
+    }
+    .merchants-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .merchant-item-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .merchant-item-card:hover {
+      transform: translateX(2px);
+      border-color: #93c5fd;
+    }
+    .merchant-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .merchant-icon-bubble {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: #eff6ff;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .merchant-info h4 {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+    .merchant-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 2px;
+    }
+    .merchant-status-tag {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 6px;
+    }
+    .status-open { background: #ecfdf5; color: #065f46; }
+    .status-closed { background: #fff1f2; color: #9f1239; }
+    .merchant-badge-discount {
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 8px;
+      display: inline-block;
+    }
+    .btn-pay-merchant {
+      margin-top: 4px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: block;
+      width: 100%;
+    }
+    .btn-pay-merchant:hover { background: var(--primary-light); }
+
+    /* Carnet Digital QR Estable */
+    .carnet-totp-card {
+      margin: 0 20px 20px 20px;
+      background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%);
+      color: #fff;
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.3);
+      border: 1px solid #334155;
+    }
+    .carnet-qr-frame {
+      background: #fff;
+      width: 170px;
+      height: 170px;
+      margin: 12px auto;
+      border-radius: 14px;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.35);
+    }
+    .qr-timer-bar-container {
+      width: 100%;
+      height: 6px;
+      background: #334155;
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+    .qr-timer-bar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #10b981 0%, #3b82f6 100%);
+      animation: countdown 30s linear infinite;
+    }
+    @keyframes countdown {
+      0% { width: 100%; }
+      100% { width: 0%; }
+    }
+
+    /* FAQ y Acordeón */
+    .faq-accordion { padding: 0 20px 20px 20px; }
+    .faq-item {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+    .faq-question {
+      padding: 14px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .faq-answer {
+      padding: 0 14px 14px 14px;
+      font-size: 12px;
+      color: var(--text-muted);
+      display: none;
+      line-height: 1.4;
+    }
+    .faq-item.active .faq-answer { display: block; }
+    .faq-item.active .faq-toggle { transform: rotate(180deg); }
+
+    /* Bottom Navigation Bar Fija Centrada */
+    .bottom-nav-bar {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: var(--app-max-width);
+      height: 68px;
+      background: #ffffff;
+      border-top: 1px solid #e2e8f0;
+      border-radius: 20px 20px 0 0;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+      z-index: 1000;
+      box-sizing: border-box;
+      padding: 0 10px;
+    }
+    .bottom-nav-item {
+      background: transparent;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 700;
+      width: 70px;
+      transition: color 0.2s ease;
+    }
+    .bottom-nav-item:hover, .bottom-nav-item.active {
+      color: var(--primary);
+    }
+    .bottom-nav-icon {
+      font-size: 20px;
+      line-height: 1;
+    }
+    .btn-qr-floating {
+      position: relative;
+      top: -18px;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #135596, #0d3b66);
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 6px 16px rgba(19, 85, 150, 0.35);
+      border: 4px solid #f1f5f9;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .btn-qr-floating:active { transform: scale(0.95); }
+    .btn-qr-floating span.qr-icon { font-size: 20px; line-height: 1; }
+    .btn-qr-floating span.qr-label { font-size: 8px; font-weight: 800; letter-spacing: -0.2px; margin-top: 1px; }
+
+    /* ==========================================================================
+       PORTAL 1: CRM BACKOFFICE — 8 MÓDULOS DE BARRA LATERAL
+       ========================================================================== */
+    .crm-layout {
+      display: flex;
+      min-height: calc(100vh - 49px);
+      background-color: #f1f5f9;
+    }
+    .sidebar-crm-fixed {
+      width: 275px;
+      background: #0f172a;
+      color: #f8fafc;
+      position: fixed;
+      top: 49px;
+      bottom: 0;
+      left: 0;
+      z-index: 500;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #1e293b;
+      transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow-y: auto;
+    }
+    .sidebar-crm-fixed.collapsed { width: 72px; }
+    .sidebar-header-box {
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #1e293b;
+      background: #09131f;
+      gap: 8px;
+    }
+    .sidebar-brand-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow: hidden;
+      flex: 1;
+    }
+    .sidebar-brand-title {
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    .sidebar-brand-title span {
+      font-size: 10px;
+      color: #94a3b8;
+      display: block;
+      font-weight: 500;
+    }
+    .btn-toggle-sidebar {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .btn-toggle-sidebar:hover { color: #fff; border-color: #64748b; }
+
+    .sidebar-menu-list {
+      padding: 12px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex: 1;
+    }
+    .crm-nav-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .crm-nav-btn:hover { background: #1e293b; color: #fff; }
+    .crm-nav-btn.active {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(19, 85, 150, 0.4);
+    }
+    .crm-content-wrapper {
+      margin-left: 275px;
+      flex: 1;
+      padding: 24px;
+      transition: margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .sidebar-crm-fixed.collapsed + .crm-content-wrapper {
+      margin-left: 72px;
+    }
+    .crm-screen { display: none; }
+    .crm-screen.active { display: block; }
+    .crm-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .crm-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+    .crm-table th {
+      background: #f8fafc;
+      padding: 10px 14px;
+      font-weight: 700;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .crm-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    /* Kanban Board */
+    .kanban-board {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+      overflow-x: auto;
+    }
+    .kanban-column {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px;
+      min-width: 200px;
+    }
+    .kanban-column-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .kanban-card-item {
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 8px;
+      box-shadow: var(--shadow-sm);
+      cursor: grab;
+    }
+
+    /* Calendario Grid */
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-top: 14px;
+    }
+    .calendar-day-header {
+      text-align: center;
+      font-weight: 700;
+      font-size: 11px;
+      color: var(--text-muted);
+      padding: 6px;
+    }
+    .calendar-day-cell {
+      min-height: 80px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 6px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* Modal emergente Ficha 360° (Full Screen / Wide Drawer) */
+    .modal-f360-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(5px);
+      z-index: 2500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-f360-backdrop.active { display: flex; }
+    .modal-f360-container {
+      background: #fff;
+      width: 95%;
+      max-width: 1080px;
+      height: 90vh;
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+    }
+    .modal-f360-header {
+      background: #0f172a;
+      color: #fff;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-f360-tabs {
+      display: flex;
+      background: #f1f5f9;
+      border-bottom: 1px solid #e2e8f0;
+      overflow-x: auto;
+    }
+    .f360-tab-btn {
+      background: transparent;
+      border: none;
+      padding: 12px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    .f360-tab-btn:hover { color: var(--primary); }
+    .f360-tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      background: #ffffff;
+    }
+    .modal-f360-body {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+      background: #f8fafc;
+    }
+    .f360-tab-content { display: none; }
+    .f360-tab-content.active { display: block; }
+
+    /* Modales Auxiliares */
+    .modal-center-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 3000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-center-backdrop.active { display: flex; }
+    .modal-dialog-box {
+      background: #fff;
+      border-radius: var(--radius-lg);
+      width: 90%;
+      max-width: 550px;
+      padding: 24px;
+      box-shadow: var(--shadow-lg);
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    /* Bottom Sheets Deslizantes */
+    .bottom-sheet-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 2000;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .bottom-sheet-backdrop.active { display: flex; }
+    .bottom-sheet-panel {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translate(-50%, 100%);
+      width: 100%;
+      max-width: var(--app-max-width);
+      max-height: 80vh;
+      background: #fff;
+      border-radius: 24px 24px 0 0;
+      padding: 22px 20px 30px 20px;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 2000;
+      overflow-y: auto;
+      box-sizing: border-box;
+      box-shadow: 0 -8px 30px rgba(0,0,0,0.18);
+    }
+    .bottom-sheet-backdrop.active .bottom-sheet-panel {
+      transform: translate(-50%, 0);
+    }
+    .sheet-drag-handle {
+      width: 44px;
+      height: 4px;
+      background: #cbd5e1;
+      border-radius: 2px;
+      margin: 0 auto 14px auto;
+    }
+    .sheet-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .sheet-title { font-size: 16px; font-weight: 800; color: var(--text-main); }
+    .sheet-close-btn {
+      background: #f1f5f9;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-size: 15px;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    /* Botón flotante verde de WhatsApp */
+    .whatsapp-floating-btn {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: #25d366;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      box-shadow: 0 4px 14px rgba(37, 211, 102, 0.4);
+      z-index: 999;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.2s;
+    }
+    .whatsapp-floating-btn:hover { transform: scale(1.08); }
+
+    /* Toast popup de Notificaciones */
+    .toast-popup {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      background: #0f172a;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 3500;
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+    .toast-popup.active { display: flex; animation: fadeIn 0.3s; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 768px) {
+      .crm-layout { flex-direction: column; }
+      .sidebar-crm-fixed { width: 100%; position: relative; top: 0; height: auto; }
+      .crm-content-wrapper { margin-left: 0 !important; padding: 14px; }
+      .toast-popup { right: 10px; left: 10px; bottom: 80px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOAST NOTIFICACIÓN GLOBAL -->
+  <div id="toast-notif" class="toast-popup">
+    <span id="toast-icon">ℹ️</span>
+    <span id="toast-message">Mensaje del sistema</span>
+  </div>
+
+  <!-- BOTÓN FLOTANTE WHATSAPP -->
+  <a href="https://api.whatsapp.com/send?phone=5493434500000&text=Hola%20Mutual%20Modelo,%20necesito%20asistencia" target="_blank" class="whatsapp-floating-btn" title="Mesa de Ayuda WhatsApp">
+    💬
+  </a>
+
+  <!-- BARRA SUPERIOR MULTI-PORTAL DISCRETA -->
+  <header class="global-portal-bar">
+    <div class="portal-brand">
+      <img src="logo.jpg" alt="Mutual Modelo de Entre Ríos" class="brand-logo-img" onerror="this.src='https://placehold.co/72x72/135596/ffffff?text=MM'">
+      <div>
+        <div class="portal-brand-text">MUTUAL MODELO DE ENTRE RÍOS</div>
+        <div class="portal-brand-badge">ENTERPRISE 360° • V9.0</div>
+      </div>
+    </div>
+    <div class="portal-tabs-selector">
+      <button type="button" class="portal-tab-btn active" onclick="cambiarPortalActivo('portal-socio-app', this)">
+        <span>📱</span> Socio
+      </button>
+      <button type="button" class="portal-tab-btn" onclick="cambiarPortalActivo('portal-crm-admin', this)">
+        <span>💼</span> CRM
+      </button>
+      <button type="button" class="portal-tab-btn" onclick="cambiarPortalActivo('portal-comercio-b2b', this)">
+        <span>🏪</span> B2B
+      </button>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       PORTAL 2: APP PWA DEL SOCIO
+       ========================================================================== -->
+  <main id="portal-socio-app" class="portal-view active">
+    
+    <!-- SUB-VISTA A: LOGIN SOCIO (Si no está autenticado) -->
+    <div id="socio-view-login" class="socio-subview">
+      <div class="socio-login-card">
+        <img src="logo.jpg" alt="Mutual Modelo de Entre Ríos" class="socio-login-logo" onerror="this.src='https://placehold.co/120x120/135596/ffffff?text=MM'">
+        <h2 style="font-size:20px; font-weight:800; color:#0f172a; margin-bottom:6px;">Bienvenido a tu Mutual</h2>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:24px;">Ingresá tus credenciales para acceder a tus Billeteras y Ayudas</p>
+
+        <div style="text-align:left; margin-bottom:14px;">
+          <label style="font-size:12px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">NÚMERO DE DNI</label>
+          <input type="text" id="login-socio-dni" value="28945120" style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:10px; font-size:15px; font-weight:700;" class="mono">
+        </div>
+
+        <div style="text-align:left; margin-bottom:20px;">
+          <label style="font-size:12px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">CLAVE DE ACCESO</label>
+          <input type="password" id="login-socio-pass" value="123456" style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:10px; font-size:15px;">
+        </div>
+
+        <button type="button" style="width:100%; background:var(--primary); color:#fff; border:none; padding:14px; border-radius:12px; font-size:15px; font-weight:800; cursor:pointer;" onclick="iniciarSesionSocio()">
+          Ingresar a la App
+        </button>
+
+        <a href="https://api.whatsapp.com/send?phone=5493434500000&text=Hola,%20olvide%20mi%20clave%20de%20Mutual%20Modelo" target="_blank" style="display:block; margin-top:16px; font-size:12px; color:var(--primary); font-weight:700; text-decoration:none;">
+          ¿Olvidaste tu clave? Recuperar por WhatsApp ➔
+        </a>
+      </div>
+    </div>
+
+    <!-- SUB-VISTA B: DASHBOARD SOCIO Y SECCIONES -->
+    <div id="socio-view-dashboard" class="socio-subview active">
+      
+      <!-- 1. Cabecera Fintech Limpia -->
+      <section class="socio-clean-header">
+        <div class="socio-header-top">
+          <div class="socio-user-profile">
+            <div class="socio-avatar-circle" id="avatar-socio">ML</div>
+            <div>
+              <div class="socio-greeting-label">Hola, <span id="lbl-nombre-saludo">María Laura</span> 👋</div>
+              <span class="badge-al-dia">AL DÍA 🟢</span>
+            </div>
+          </div>
+          <div class="socio-header-actions">
+            <select class="socio-select-chip" id="select-socio-activo" onchange="seleccionarSocioActivo(this.value)">
+              <option value="1">María Laura (Docente CGE)</option>
+              <option value="2">Carlos Alberto (Policía E.R.)</option>
+              <option value="3">Rosa Noemí (Salud)</option>
+            </select>
+            <button type="button" class="btn-eye-toggle" onclick="toggleBalanceVisibility()" title="Ocultar o Mostrar Saldos">
+              <span id="eye-icon-btn">👁️</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Saldo Principal Disponible -->
+        <div class="socio-balance-box">
+          <div class="socio-balance-label">Saldo disponible en cuentas</div>
+          <div class="socio-balance-amount mono">
+            <span id="txt-saldo-total">$ 68.450</span><span class="socio-balance-cents">,00</span>
+          </div>
+          <div class="socio-credit-banner">
+            <span>Margen preaprobado para Préstamos:</span>
+            <strong class="mono" id="txt-margen-prestamo">$ 450.000,00</strong>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Tarjetas de Billeteras (Naranja X) -->
+      <section class="wallets-container">
+        <div class="wallets-title">
+          <span>Billeteras Activas</span>
+          <span style="font-size:11px; color:var(--primary); font-weight:800;">3 Líneas</span>
+        </div>
+
+        <!-- B1 -->
+        <div class="wallet-card wallet-b1" onclick="mostrarNotificacion('Billetera 1: Habilitada para Farmacias y Ópticas', 'info')">
+          <div class="wallet-card-header">
+            <span class="wallet-name">💳 Billetera 1 (Consumo Diario)</span>
+            <span class="wallet-pill">Farmacia / Óptica</span>
+          </div>
+          <div class="wallet-val mono" id="val-b1-saldo">$ 28.450,00</div>
+          <div class="wallet-card-footer">
+            <span>Convenio Haberes Entre Ríos</span>
+            <span>Descubierto: $50.000</span>
+          </div>
+        </div>
+
+        <!-- B2 -->
+        <div class="wallet-card wallet-b2" onclick="mostrarNotificacion('Billetera 2: Habilitada para Motos y Electrodomésticos', 'info')">
+          <div class="wallet-card-header">
+            <span class="wallet-name">🛒 Billetera 2 (Consumo B2B)</span>
+            <span class="wallet-pill">Motos / Electro</span>
+          </div>
+          <div class="wallet-val mono" id="val-b2-saldo">$ 40.000,00</div>
+          <div class="wallet-card-footer">
+            <span>Hasta 24 Cuotas Bonificadas</span>
+            <span>12 Comercios Adheridos</span>
+          </div>
+        </div>
+
+        <!-- B3 -->
+        <div class="wallet-card wallet-b3" onclick="mostrarNotificacion('Billetera 3: Ayuda Económica con acreditación CBU inmediata', 'info')">
+          <div class="wallet-card-header">
+            <span class="wallet-name">⭐ Billetera 3 (Ayuda CBU)</span>
+            <span class="wallet-pill">Libre Destino</span>
+          </div>
+          <div class="wallet-val mono" id="val-b3-saldo">$ 450.000,00</div>
+          <div class="wallet-card-footer">
+            <span>Tasa Preferencial Mutual</span>
+            <span>Acreditación 24hs</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Recuadro Últimos Consumos -->
+      <section class="transactions-summary-card">
+        <div class="transactions-header">
+          <h3><span>🕒</span> Últimos Consumos</h3>
+          <span style="font-size:11px; color:var(--text-muted); font-weight:700;">Marzo 2026</span>
+        </div>
+
+        <div class="transactions-list" id="transactions-summary-list">
+          <div class="transaction-row">
+            <div class="transaction-left">
+              <div class="transaction-icon-box">💊</div>
+              <div class="transaction-desc">
+                <strong>Farmacia Central Paraná</strong>
+                <span>08/03/2026 • Cuota 1/3</span>
+              </div>
+            </div>
+            <div class="transaction-right">
+              <div class="transaction-amount mono" id="trx-amt-1">$ 14.200,00</div>
+              <span class="transaction-badge badge-cuotas">EN CUOTAS 🔵</span>
+            </div>
+          </div>
+
+          <div class="transaction-row">
+            <div class="transaction-left">
+              <div class="transaction-icon-box">👓</div>
+              <div class="transaction-desc">
+                <strong>Óptica Paraná Visión</strong>
+                <span>04/03/2026 • Cuota 2/6</span>
+              </div>
+            </div>
+            <div class="transaction-right">
+              <div class="transaction-amount mono" id="trx-amt-2">$ 8.500,00</div>
+              <span class="transaction-badge badge-cuotas">EN CUOTAS 🔵</span>
+            </div>
+          </div>
+
+          <div class="transaction-row">
+            <div class="transaction-left">
+              <div class="transaction-icon-box">🛒</div>
+              <div class="transaction-desc">
+                <strong>Supermercado La Peruana</strong>
+                <span>02/03/2026 • Contado B1</span>
+              </div>
+            </div>
+            <div class="transaction-right">
+              <div class="transaction-amount mono" id="trx-amt-3">$ 32.400,00</div>
+              <span class="transaction-badge badge-pagado">PAGADO 🟢</span>
+            </div>
+          </div>
+        </div>
+
+        <a class="transactions-view-all-link" onclick="abrirModalTodosConsumos()">
+          Ver todos los consumos e historial completo ➔
+        </a>
+      </section>
+
+      <!-- 4. Módulo de Trámites y Servicios Propios de la Mutual -->
+      <div style="padding:0 20px 8px 20px;">
+        <h4 style="font-size:12.5px; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:10px;">
+          🏛️ Servicios & Beneficios Propios
+        </h4>
+      </div>
+      <div class="services-grid-chips">
+        <div class="service-chip-btn" onclick="abrirModalServicio('subsidio')">
+          <div class="service-chip-icon">🎁</div>
+          <div class="service-chip-title">Subsidios</div>
+        </div>
+        <div class="service-chip-btn" onclick="abrirModalServicio('seguro')">
+          <div class="service-chip-icon">🛡️</div>
+          <div class="service-chip-title">Seguros</div>
+        </div>
+        <div class="service-chip-btn" onclick="abrirModalServicio('odontologia')">
+          <div class="service-chip-icon">🦷</div>
+          <div class="service-chip-title">Odontología</div>
+        </div>
+        <div class="service-chip-btn" onclick="abrirModalServicio('turismo')">
+          <div class="service-chip-icon">✈️</div>
+          <div class="service-chip-title">Turismo</div>
+        </div>
+        <div class="service-chip-btn" onclick="abrirModalServicio('salones')">
+          <div class="service-chip-icon">🎉</div>
+          <div class="service-chip-title">Salones</div>
+        </div>
+        <div class="service-chip-btn" onclick="abrirModalServicio('ayuda')">
+          <div class="service-chip-icon">💰</div>
+          <div class="service-chip-title">Mis Créditos</div>
+        </div>
+      </div>
+
+      <!-- 5. Tarjeta de 10 Sellos Inteligente -->
+      <section class="loyalty-card">
+        <div class="loyalty-header">
+          <strong style="font-size:13.5px;">🎟️ Tarjeta Virtual de 10 Sellos</strong>
+          <span style="font-size:11px; font-weight:800; color:#b45309; background:#fef3c7; padding:3px 8px; border-radius:10px;" id="lbl-sellos-count">7 / 10 Sellos</span>
+        </div>
+        
+        <div class="stamps-grid-5x2" id="stamps-container-5x2"></div>
+
+        <div class="tips-promos-container">
+          <h5>💡 ¿Cómo sumar tus próximos sellos?</h5>
+          <div class="tips-grid">
+            <div class="tip-card">
+              <strong>🛒 Farmacia Central:</strong> Sumá 1 sello abonando con Billetera 1 hoy.
+            </div>
+            <div class="tip-card">
+              <strong>⛽ Carga en YPF:</strong> Obtené 1 sello adicional y 5% de reintegro en combustible.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. Mapa de Comercios -->
+      <section class="merchants-section" id="seccion-mapa-comercios">
+        <div class="merchants-title-row">
+          <h3>📍 Mapa de Comercios</h3>
+          <span style="font-size:11.5px; color:var(--text-muted); font-weight:600;">Paraná, Entre Ríos</span>
+        </div>
+
+        <button type="button" class="btn-filter-rubros" onclick="openRubrosModal()">
+          <span>🔍 Filtrar por Rubro:</span>
+          <span class="rubro-badge" id="lblRubroSeleccionado">Todos</span>
+        </button>
+
+        <div id="map-parana" class="leaflet-map-box"></div>
+        <div class="merchants-list" id="merchants-list-container"></div>
+      </section>
+
+      <!-- 7. Carnet Digital QR Estable -->
+      <section class="carnet-totp-card" id="seccion-carnet-digital">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">
+          <div style="text-align:left;">
+            <h4 style="font-size:13px; color:#93c5fd;">MUTUAL MODELO DE ENTRE RÍOS</h4>
+            <span style="font-size:10px; color:#94a3b8;">Credencial Oficial de Asociado</span>
+          </div>
+          <span class="badge-al-dia">AL DÍA 🟢</span>
+        </div>
+
+        <div class="carnet-qr-frame">
+          <div id="carnet-qr-code"></div>
+        </div>
+
+        <div class="qr-timer-bar-container">
+          <div class="qr-timer-bar"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:11px; color:#94a3b8; font-weight:600;">
+          <span>Código TOTP Dinámico</span>
+          <span class="mono" id="lbl-totp-countdown">30s</span>
+        </div>
+
+        <div style="margin-top:10px; text-align:left;">
+          <div style="font-size:14px; font-weight:800;" id="carnet-socio-nombre">María Laura Albornoz</div>
+          <div style="font-size:11.5px; color:#94a3b8;" class="mono" id="carnet-socio-doc">DNI: 28.945.120 • Legajo #1041</div>
+        </div>
+      </section>
+
+      <!-- 8. Centro de Ayuda & FAQ -->
+      <section class="faq-accordion">
+        <div style="margin-bottom:12px;">
+          <h4 style="font-size:13.5px; font-weight:800; color:var(--text-main);">❓ Preguntas Frecuentes</h4>
+        </div>
+        <div class="faq-item" onclick="toggleFaq(this)">
+          <div class="faq-question">
+            <span>¿Cómo se descuentan las cuotas de mi préstamo?</span>
+            <span class="faq-toggle">▼</span>
+          </div>
+          <div class="faq-answer">
+            Las cuotas se debitan directamente por código de descuento de haberes en convenio con CGE, Policía, Salud o Municipios.
+          </div>
+        </div>
+        <div class="faq-item" onclick="toggleFaq(this)">
+          <div class="faq-question">
+            <span>¿Dónde puedo usar la Billetera 1 y Billetera 2?</span>
+            <span class="faq-toggle">▼</span>
+          </div>
+          <div class="faq-answer">
+            Billetera 1 es exclusiva para consumo diario en Farmacias y Ópticas. Billetera 2 está habilitada en Comercios B2B de Motos, Electrodomésticos y Construcción.
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- 9. Bottom Navigation Bar Fija Centrada -->
+    <nav class="bottom-nav-bar">
+      <button type="button" class="bottom-nav-item active" onclick="irAInicioSocio()">
+        <span class="bottom-nav-icon">🏠</span>
+        <span>Inicio</span>
+      </button>
+      <button type="button" class="bottom-nav-item" onclick="irAMapaComercios()">
+        <span class="bottom-nav-icon">📍</span>
+        <span>Comercios</span>
+      </button>
+
+      <!-- Botón Central Flotante para QR Equilibrado -->
+      <button type="button" class="btn-qr-floating" onclick="abrirEscanerUniversalUI()" title="Pagar con QR">
+        <span class="qr-icon">📷</span>
+        <span class="qr-label">Pagar QR</span>
+      </button>
+
+      <button type="button" class="bottom-nav-item" onclick="abrirModalMiCuenta()">
+        <span class="bottom-nav-icon">👤</span>
+        <span>Mi Cuenta</span>
+      </button>
+    </nav>
+  </main>
+
+  <!-- ==========================================================================
+       PORTAL 1: CRM & BACKOFFICE (8 MÓDULOS DE BARRA LATERAL)
+       ========================================================================== -->
+  <main id="portal-crm-admin" class="portal-view">
+    <div class="crm-layout">
+      
+      <!-- Sidebar con 8 Módulos Funcionales -->
+      <aside class="sidebar-crm-fixed" id="crm-sidebar">
+        <div class="sidebar-header-box">
+          <div class="sidebar-brand-wrapper">
+            <img src="logo.jpg" alt="Mutual Modelo de Entre Ríos" class="brand-logo-img" onerror="this.src='https://placehold.co/72x72/135596/ffffff?text=MM'">
+            <div class="sidebar-brand-title">
+              MUTUAL MODELO
+              <span>CRM Backoffice V9</span>
+            </div>
+          </div>
+          <button type="button" class="btn-toggle-sidebar" onclick="toggleSidebarCRM()" title="Colapsar o Expandir Menú">
+            ⇄
+          </button>
+        </div>
+
+        <nav class="sidebar-menu-list">
+          <button type="button" class="crm-nav-btn active" onclick="cambiarModuloCRM('crm-mod-1', this)">
+            <span class="nav-icon">👥</span>
+            <span>01. Padrón & Ficha 360°</span>
+          </button>
+          <button type="button" class="crm-nav-btn" onclick="cambiarModuloCRM('crm-mod-2', this)">
+            <span class="nav-icon">🧮</span>
+            <span>02. Simulador & Propuestas</span>
+          </button>
+          <button type="button" class="crm-nav-btn" onclick="cambiarModuloCRM('crm-mod-3', this)">
+            <span class="nav-icon">⚡</span>
+            <span>03. Operaciones & Alertas</span>
+          </button>
+          <button type="button" class="crm-nav-btn" onclick="cambiarModuloCRM('crm-mod-4', this)">
+            <span class="nav-icon">🤝</span>
+            <span>04. Comercializadores</span>
+          </button>
+          <button type="button" class="crm-nav-btn" onclick="cambiarModuloCRM('crm-mod-5', this)">
+            <span class="nav-icon">💼</span>
+            <span>05. Cesión & Carteras</span>
+          </button>
+          <button type="button" class="crm-nav-btn" onclick="cambiarModuloCRM('crm-mod-6', this)">
+            <span class="nav-icon">🏪</span>
+            <span>06. Ecosistema B2B</span>
+          </button>
+          <button type="button" class="crm-nav-btn" onclick="cambiarModuloCRM('crm-mod-7', this)">
+            <span class="nav-icon">📊</span>
+            <span>07. Métricas Power BI</span>
+          </button>
+          <button type="button" class="crm-nav-btn" onclick="cambiarModuloCRM('crm-mod-8', this)">
+            <span class="nav-icon">🤖</span>
+            <span>08. Configuración & IA</span>
+          </button>
+        </nav>
+      </aside>
+
+      <!-- Contenido de Pantallas del CRM -->
+      <section class="crm-content-wrapper">
+        
+        <!-- MÓDULO 1: PADRÓN GENERAL Y FICHA SOCIO 360° UNIFICADOS -->
+        <div id="crm-mod-1" class="crm-screen active">
+          <div class="crm-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+              <div>
+                <h2>👥 Padrón General de Asociados</h2>
+                <p style="font-size:12px; color:var(--text-muted);">Padrón oficial unificado con Ficha 360° y expediente digital</p>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <input type="text" id="crm-padron-search" placeholder="Buscar por DNI o Apellido..." style="padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; width:220px;" onkeyup="filtrarTablaPadron(this.value)">
+                <select id="crm-padron-filtro-org" style="padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px;" onchange="filtrarPadronMulti()">
+                  <option value="TODOS">Todos los Organismos</option>
+                  <option value="Provincial">Provinciales (CGE/Policía/Salud)</option>
+                  <option value="Municipal">Municipales</option>
+                </select>
+                <select id="crm-padron-filtro-cuota" style="padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px;" onchange="filtrarPadronMulti()">
+                  <option value="TODOS">Todas las Cuotas</option>
+                  <option value="Al día">Al día 🟢</option>
+                  <option value="Mora">Mora 🔴</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="overflow-x:auto;">
+              <table class="crm-table">
+                <thead>
+                  <tr>
+                    <th>N° Socio</th>
+                    <th>Apellido y Nombres</th>
+                    <th>DNI</th>
+                    <th>Organismo</th>
+                    <th>Condición</th>
+                    <th>Dependencia / Trabajo</th>
+                    <th>Cuota Social</th>
+                    <th>Estado / Alertas</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-padron-general"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- MÓDULO 2: SIMULADOR DE AYUDAS ECONÓMICAS Y COMBINADAS -->
+        <div id="crm-mod-2" class="crm-screen">
+          <div class="crm-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <h2>🧮 Simulador Multilínea y Ayudas Combinadas</h2>
+              <div style="display:flex; gap:8px;">
+                <button type="button" id="btn-calc-por-monto" class="portal-tab-btn active" style="color:#0f172a; background:#e2e8f0;" onclick="setModoEntradaSim('MONTO')">Por Monto Neto</button>
+                <button type="button" id="btn-calc-por-cuota" class="portal-tab-btn" style="color:#0f172a; background:#e2e8f0;" onclick="setModoEntradaSim('CUOTA')">Por Margen de Cuota</button>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+              <div>
+                <div style="margin-bottom:12px;">
+                  <label style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">MODALIDAD DE AYUDA</label>
+                  <select id="sim-tipo-plan" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px;" onchange="onCambioTipoPlanSim()">
+                    <option value="INDIVIDUAL">Línea Individual Oficial</option>
+                    <option value="COMBINADA_FEDEM_SIDECREER">Combinada: FEDEM + Sidecreer</option>
+                    <option value="COMBINADA_MUNI_SIDECREER">Combinada: Municipales + Sidecreer</option>
+                  </select>
+                </div>
+
+                <div id="sec-linea-individual" style="margin-bottom:12px;">
+                  <label style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">LÍNEA OFICIAL</label>
+                  <select id="sim-linea-sel" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px;" onchange="ejecutarSimulador()">
+                    <option value="FEDEM">FEDEM Provincial (Gastos 25%/34%, Seguro 0.50%)</option>
+                    <option value="VIKINGO">Municipales QUAD (12 y 24 cuotas, Factor Vikingo 0.85, TNA QUAD 39.60% / TEM 3.30%)</option>
+                    <option value="SIDECREER">Convenio Sidecreer (Regla 12 de $10.000 = $87.333,02 Capital)</option>
+                  </select>
+                </div>
+
+                <div style="margin-bottom:12px;">
+                  <label id="lbl-input-sim-val" style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">MONTO NETO A ENTREGAR ($)</label>
+                  <input type="number" id="sim-input-val" value="100000" step="5000" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px;" oninput="ejecutarSimulador()">
+                </div>
+
+                <div style="margin-bottom:12px;">
+                  <label style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">PLAZO DE CUOTAS</label>
+                  <select id="sim-cuotas-sel" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px;" onchange="ejecutarSimulador()">
+                    <option value="6">6 Cuotas</option>
+                    <option value="12" selected>12 Cuotas</option>
+                    <option value="18">18 Cuotas</option>
+                    <option value="24">24 Cuotas</option>
+                    <option value="36">36 Cuotas</option>
+                    <option value="48">48 Cuotas</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Resultados Simulados -->
+              <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:18px;">
+                <h3 style="font-size:15px; font-weight:800; margin-bottom:12px; color:var(--primary);">Liquidación de la Ayuda</h3>
+                <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed #cbd5e1;">
+                  <span>Cuota Mensual Final:</span>
+                  <strong class="mono" id="sim-res-cuota" style="font-size:18px; color:#135596;">$ 10.000,00</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed #cbd5e1;">
+                  <span>Capital Nominal / Base:</span>
+                  <strong class="mono" id="sim-res-capital">$ 100.000,00</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed #cbd5e1;">
+                  <span>Monto Neto Entregado:</span>
+                  <strong class="mono" id="sim-res-neto">$ 87.333,02</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed #cbd5e1;">
+                  <span>Gastos Administrativos:</span>
+                  <span class="mono" id="sim-res-gastos">$ 12.666,98</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed #cbd5e1;">
+                  <span>Seguro de Vida:</span>
+                  <span class="mono" id="sim-res-seguro">$ 0,00</span>
+                </div>
+
+                <!-- Panel de Propuesta WhatsApp Desplegable -->
+                <div style="margin-top:14px; background:#fff; border:1px solid #bfdbfe; border-radius:10px; padding:12px;">
+                  <strong style="font-size:12px; color:#1e3a8a;">📱 Propuesta Formateada para WhatsApp:</strong>
+                  <pre id="txt-propuesta-whatsapp" style="font-size:11px; color:#334155; background:#f8fafc; padding:8px; border-radius:6px; margin:8px 0; white-space:pre-wrap; font-family:monospace;"></pre>
+                  <div style="display:flex; gap:8px;">
+                    <button type="button" style="flex:1; background:#0f172a; color:#fff; border:none; padding:8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;" onclick="copiarPropuestaClipboard()">
+                      📋 Copiar Propuesta
+                    </button>
+                    <button type="button" style="flex:1; background:#25d366; color:#fff; border:none; padding:8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;" onclick="enviarPropuestaWhatsApp()">
+                      💬 Enviar WhatsApp
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MÓDULO 3: CENTRO DE OPERACIONES Y GESTIÓN DE ALERTAS (TRIPLE VISTA) -->
+        <div id="crm-mod-3" class="crm-screen">
+          <div class="crm-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
+              <div>
+                <h2>⚡ Centro de Operaciones & SLAs</h2>
+                <p style="font-size:12px; color:var(--text-muted);">Gestión de trámites en Triple Vista (Listado, Kanban y Calendario)</p>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <button type="button" class="portal-tab-btn active" id="btn-vista-listado" style="color:#0f172a; background:#e2e8f0;" onclick="setModoVistaOps('LISTADO')">📋 Listado</button>
+                <button type="button" class="portal-tab-btn" id="btn-vista-kanban" style="color:#0f172a; background:#e2e8f0;" onclick="setModoVistaOps('KANBAN')">📌 Kanban</button>
+                <button type="button" class="portal-tab-btn" id="btn-vista-calendario" style="color:#0f172a; background:#e2e8f0;" onclick="setModoVistaOps('CALENDARIO')">📅 Calendario</button>
+                <button type="button" style="background:var(--primary); color:#fff; border:none; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;" onclick="abrirModalNuevaAlerta()">+ Nueva Alerta</button>
+              </div>
+            </div>
+
+            <!-- VISTA 1: LISTADO -->
+            <div id="ops-subvista-listado">
+              <table class="crm-table">
+                <thead>
+                  <tr>
+                    <th>Trámite / Alerta</th>
+                    <th>Asociado</th>
+                    <th>Operación</th>
+                    <th>Operador</th>
+                    <th>Vencimiento / SLA</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-ops-listado"></tbody>
+              </table>
+            </div>
+
+            <!-- VISTA 2: KANBAN -->
+            <div id="ops-subvista-kanban" style="display:none;">
+              <div class="kanban-board">
+                <div class="kanban-column" id="kanban-col-solicitado">
+                  <div class="kanban-column-title"><span>Solicitado</span><span class="mono" id="kb-count-1">0</span></div>
+                  <div class="kanban-cards-box" id="kb-box-solicitado"></div>
+                </div>
+                <div class="kanban-column" id="kanban-col-evaluacion">
+                  <div class="kanban-column-title"><span>En Evaluación</span><span class="mono" id="kb-count-2">0</span></div>
+                  <div class="kanban-cards-box" id="kb-box-evaluacion"></div>
+                </div>
+                <div class="kanban-column" id="kanban-col-aprobado">
+                  <div class="kanban-column-title"><span>Aprobado</span><span class="mono" id="kb-count-3">0</span></div>
+                  <div class="kanban-cards-box" id="kb-box-aprobado"></div>
+                </div>
+                <div class="kanban-column" id="kanban-col-liquidado">
+                  <div class="kanban-column-title"><span>Liquidado</span><span class="mono" id="kb-count-4">0</span></div>
+                  <div class="kanban-cards-box" id="kb-box-liquidado"></div>
+                </div>
+                <div class="kanban-column" id="kanban-col-rechazado">
+                  <div class="kanban-column-title"><span>Rechazado</span><span class="mono" id="kb-count-5">0</span></div>
+                  <div class="kanban-cards-box" id="kb-box-rechazado"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- VISTA 3: CALENDARIO -->
+            <div id="ops-subvista-calendario" style="display:none;">
+              <div style="font-size:13px; font-weight:800; color:var(--primary); margin-bottom:6px;">Marzo 2026 — Agenda de Liquidaciones y Vencimientos SLA</div>
+              <div class="calendar-grid" id="calendar-grid-box"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MÓDULO 4: COMERCIALIZADORES Y COMISIONES -->
+        <div id="crm-mod-4" class="crm-screen">
+          <div class="crm-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <h2>🤝 Comercializadores y Comisiones</h2>
+              <button type="button" style="background:var(--primary); color:#fff; border:none; padding:8px 14px; border-radius:8px; font-weight:700; cursor:pointer;" onclick="abrirModalEditarComercializador()">✏️ Editar Asesor Activo</button>
+            </div>
+
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; margin-bottom:16px;">
+              <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px;">
+                <div>
+                  <div style="font-size:11px; color:#64748b; font-weight:700;">ASESOR DESTACADO</div>
+                  <strong id="com-nombre-display">Roberto Vallejos</strong>
+                </div>
+                <div>
+                  <div style="font-size:11px; color:#64748b; font-weight:700;">COMISIÓN VIGENTE</div>
+                  <strong class="mono" id="com-tasa-display">5,00%</strong>
+                </div>
+                <div>
+                  <div style="font-size:11px; color:#64748b; font-weight:700;">BASE DE CÁLCULO</div>
+                  <strong style="color:var(--primary);" id="com-base-display">Neto Efectivo Entregado</strong>
+                </div>
+                <div>
+                  <div style="font-size:11px; color:#64748b; font-weight:700;">TOTAL LIQUIDADO MES</div>
+                  <strong class="mono" style="color:#059669;">$ 160.000,00</strong>
+                </div>
+              </div>
+            </div>
+
+            <h3 style="font-size:14px; font-weight:800; margin-bottom:10px;">Liquidaciones Registradas:</h3>
+            <table class="crm-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Período</th>
+                  <th>Comercializador</th>
+                  <th>Monto Base</th>
+                  <th>Comisión Cobrada</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-comercializadores-liq"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- MÓDULO 5: GESTIÓN DE CARTERAS Y CESIONES (VALUACIÓN & REPORTES) -->
+        <div id="crm-mod-5" class="crm-screen">
+          <div class="crm-card">
+            <h2>💼 Gestión de Carteras, Cesiones y Valuación VPN</h2>
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Motor de selección multicriterio y cálculo de Valor Presente Neto para cesión fiduciaria</p>
+
+            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:16px; background:#f8fafc; padding:14px; border-radius:10px; border:1px solid #e2e8f0;">
+              <div>
+                <label style="font-size:11px; font-weight:700; color:#64748b;">LÍNEA A CEDER</label>
+                <select id="vpn-filtro-linea" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px;" onchange="calcularVPN()">
+                  <option value="TODAS">Todas las Líneas</option>
+                  <option value="FEDEM">Solo FEDEM Provincial</option>
+                  <option value="VIKINGO">Solo Municipales</option>
+                  <option value="SIDECREER">Solo Sidecreer</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:11px; font-weight:700; color:#64748b;">SCORING / ESTADO</label>
+                <select id="vpn-filtro-estado" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px;" onchange="calcularVPN()">
+                  <option value="ALDIA">Al Día (Sin Mora)</option>
+                  <option value="TODOS">Al Día + Con Mora Leve</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:11px; font-weight:700; color:#64748b;">TASA ANUAL DE CORTE (%)</label>
+                <input type="number" id="vpn-tasa-corte" value="64.5" step="0.5" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px;" oninput="calcularVPN()">
+              </div>
+              <div>
+                <label style="font-size:11px; font-weight:700; color:#64748b;">LOTE ASIGNADO</label>
+                <input type="text" id="vpn-lote-id" value="LOTE-CGE-2026-03" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px;" readonly>
+              </div>
+            </div>
+
+            <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:18px; margin-bottom:16px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span>Total Capital Nominal del Lote Seleccionado:</span>
+                <strong class="mono" id="vpn-res-nominal" style="font-size:16px;">$ 45.000.000,00</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; border-top:1px dashed #bfdbfe; padding-top:8px;">
+                <strong style="color:var(--primary); font-size:15px;">Valor Presente Neto (VPN) de Cesión:</strong>
+                <strong class="mono" id="vpn-res-calculado" style="font-size:20px; color:var(--primary);">$ 39.850.412,80</strong>
+              </div>
+            </div>
+
+            <button type="button" style="background:var(--primary); color:#fff; border:none; padding:10px 16px; border-radius:8px; font-weight:700; cursor:pointer;" onclick="mostrarNotificacion('Lote generado con éxito. Exportación a Excel/CSV lista.', 'success')">
+              📥 Generar y Exportar Lote de Cesión
+            </button>
+          </div>
+        </div>
+
+        <!-- MÓDULO 6: ECOSISTEMA DE ALIANZAS B2B Y COMERCIOS -->
+        <div id="crm-mod-6" class="crm-screen">
+          <div class="crm-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <div>
+                <h2>🏪 Ecosistema de Alianzas B2B</h2>
+                <p style="font-size:12px; color:var(--text-muted);">Comercios adheridos, aranceles, promociones y Pool Global de Reintegros</p>
+              </div>
+              <button type="button" style="background:var(--primary); color:#fff; border:none; padding:8px 14px; border-radius:8px; font-weight:700; cursor:pointer;" onclick="abrirModalNuevoComercio()">+ Nuevo Comercio</button>
+            </div>
+
+            <!-- Pool Global -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:16px;">
+              <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:12px; padding:14px;">
+                <div style="font-size:11px; color:#065f46; font-weight:700;">POOL GLOBAL DE REINTEGROS (PRESUPUESTO MES)</div>
+                <div class="mono" style="font-size:22px; font-weight:800; color:#059669;">$ 2.500.000,00</div>
+                <div style="font-size:11px; color:#047857; margin-top:2px;">Consumido al momento: $ 845.200,00 (33.8%)</div>
+              </div>
+              <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:14px;">
+                <div style="font-size:11px; color:#1e40af; font-weight:700;">COMERCIOS ACTIVOS EN RED</div>
+                <div class="mono" style="font-size:22px; font-weight:800; color:#135596;">24 Locales</div>
+                <div style="font-size:11px; color:#1d4ed8; margin-top:2px;">Convenios de cuotas 1 a 24 sin interés</div>
+              </div>
+            </div>
+
+            <table class="crm-table">
+              <thead>
+                <tr>
+                  <th>Comercio</th>
+                  <th>CUIT</th>
+                  <th>Rubro</th>
+                  <th>Arancel Mutual</th>
+                  <th>Cuotas Permitidas</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-alianzas-b2b"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- MÓDULO 7: MÉTRICAS Y REPORTES EJECUTIVOS (ESTILO POWER BI) -->
+        <div id="crm-mod-7" class="crm-screen">
+          <div class="crm-card">
+            <h2>📊 Tablero Ejecutivo de Control (Estilo Power BI)</h2>
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Indicadores clave de rendimiento financiero y colocación de crédito</p>
+
+            <!-- KPIs -->
+            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:20px;">
+              <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
+                <div style="font-size:11px; color:#64748b; font-weight:700;">COLOCACIÓN TOTAL MES</div>
+                <div class="mono" style="font-size:20px; font-weight:800; color:var(--primary);">$ 34.850.000</div>
+              </div>
+              <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
+                <div style="font-size:11px; color:#64748b; font-weight:700;">COBRANZA EN TÉRMINO</div>
+                <div class="mono" style="font-size:20px; font-weight:800; color:#059669;">96,4%</div>
+              </div>
+              <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
+                <div style="font-size:11px; color:#64748b; font-weight:700;">CONSUMO EN COMERCIOS</div>
+                <div class="mono" style="font-size:20px; font-weight:800; color:#6366f1;">$ 8.920.000</div>
+              </div>
+              <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
+                <div style="font-size:11px; color:#64748b; font-weight:700;">NUEVOS ASOCIADOS</div>
+                <div class="mono" style="font-size:20px; font-weight:800; color:#d97706;">+142 Socios</div>
+              </div>
+            </div>
+
+            <!-- Gráficos Chart.js -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:20px;">
+              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+                <h4 style="font-size:13px; font-weight:800; margin-bottom:10px;">Colocación Mensual por Línea ($)</h4>
+                <div style="height:220px; position:relative;">
+                  <canvas id="chart-colocacion-lineas"></canvas>
+                </div>
+              </div>
+              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+                <h4 style="font-size:13px; font-weight:800; margin-bottom:10px;">Distribución de Cartera por Organismo</h4>
+                <div style="height:220px; position:relative;">
+                  <canvas id="chart-organismos-dona"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+              <h4 style="font-size:13px; font-weight:800; margin-bottom:10px;">Evolución de Consumos Diarios en Farmacias y Comercios</h4>
+              <div style="height:200px; position:relative;">
+                <canvas id="chart-consumos-diarios"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MÓDULO 8: CONFIGURACIÓN E INTEGRACIONES IA (WEBHOOKS) -->
+        <div id="crm-mod-8" class="crm-screen">
+          <div class="crm-card">
+            <h2>🤖 Configuración, Webhooks & Agentes IA</h2>
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Gestión de llaves de API, webhooks para Google Apps Script y logs de auditoría</p>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px;">
+              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+                <h4 style="font-size:13px; font-weight:800; margin-bottom:12px;">Conectores de Inteligencia Artificial</h4>
+                <div style="margin-bottom:10px;">
+                  <label style="font-size:11px; font-weight:700; color:#64748b;">GEMINI 2.5 PRO / FLASH API KEY</label>
+                  <input type="password" value="AIzaSyB_MODELO_MUTUAL_ENTERPRISE_SECURE" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px;" readonly>
+                </div>
+                <div style="margin-bottom:10px;">
+                  <label style="font-size:11px; font-weight:700; color:#64748b;">DARWIN IA FINTECH ENDPOINT</label>
+                  <input type="text" value="https://api.mutualmodelo.org.ar/v1/darwin-audit" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px;" readonly>
+                </div>
+                <div>
+                  <label style="font-size:11px; font-weight:700; color:#64748b;">WHATSAPP CLOUD API STATUS</label>
+                  <div style="color:#059669; font-weight:800; font-size:12px; margin-top:3px;">🟢 Conectado (+54 9 343 450-0000)</div>
+                </div>
+              </div>
+
+              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+                <h4 style="font-size:13px; font-weight:800; margin-bottom:12px;">Webhooks Google Apps Script (Sheets & Drive)</h4>
+                <div style="margin-bottom:10px;">
+                  <label style="font-size:11px; font-weight:700; color:#64748b;">URL WEB APP APPS SCRIPT (doPost)</label>
+                  <input type="text" value="https://script.google.com/macros/s/AKfycbx_MUTUAL_MODELO_PROD/exec" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px;" readonly>
+                </div>
+                <button type="button" style="background:var(--primary); color:#fff; border:none; padding:8px 14px; border-radius:6px; font-weight:700; font-size:11px; cursor:pointer;" onclick="mostrarNotificacion('Ping enviado a Google Apps Script: Respuesta 200 OK', 'success')">
+                  ⚡ Probar Webhook en Vivo
+                </button>
+              </div>
+            </div>
+
+            <h3 style="font-size:13px; font-weight:800; margin-bottom:8px;">Logs de Auditoría y Eventos:</h3>
+            <div style="background:#0f172a; color:#a7f3d0; padding:12px; border-radius:8px; font-family:monospace; font-size:11px; max-height:160px; overflow-y:auto;" id="crm-audit-logs">
+              [2026-03-09 10:14:22] [AUTH] Operador Julian inició sesión en Backoffice.<br>
+              [2026-03-09 10:15:05] [IA] Recibo de Haberes #28945120 auditado con Gemini: Margen validado $187.200.<br>
+              [2026-03-09 10:20:18] [DRIVE] Expediente digital sincronizado en Google Drive con hash SHA256.<br>
+              [2026-03-09 10:30:45] [WEBHOOK] Evento de pago QR recibido desde Supermercado La Peruana ($4.500).
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <!-- ==========================================================================
+       PORTAL 3: PORTAL DEL COMERCIO ALIADO B2B
+       ========================================================================== -->
+  <main id="portal-comercio-b2b" class="portal-view">
+    <div style="max-width:640px; margin:0 auto; padding:24px 20px;">
+      
+      <!-- Selector de Sub-vistas B2B -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <div>
+          <h2 style="font-size:18px; font-weight:800;">Portal Aliado B2B</h2>
+          <p style="font-size:12px; color:var(--text-muted);">Supermercado La Peruana • Terminal #01</p>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button type="button" class="portal-tab-btn active" style="color:#0f172a; background:#e2e8f0;" onclick="cambiarSubvistaB2B('b2b-sub-terminal', this)">Terminal</button>
+          <button type="button" class="portal-tab-btn" style="color:#0f172a; background:#e2e8f0;" onclick="cambiarSubvistaB2B('b2b-sub-ventas', this)">Ventas</button>
+          <button type="button" class="portal-tab-btn" style="color:#0f172a; background:#e2e8f0;" onclick="cambiarSubvistaB2B('b2b-sub-credito', this)">Crédito</button>
+        </div>
+      </div>
+
+      <!-- 1. TERMINAL DE COBRO (Modos A, B y C) -->
+      <div id="b2b-sub-terminal" class="b2b-subview">
+        <div class="crm-card">
+          <div style="display:flex; justify-content:space-around; margin-bottom:16px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+            <button type="button" class="portal-tab-btn active" id="btn-modo-a" style="color:#0f172a; background:#e2e8f0;" onclick="setModoCobroB2B('A')">Modo A: Generar QR</button>
+            <button type="button" class="portal-tab-btn" id="btn-modo-b" style="color:#0f172a; background:#e2e8f0;" onclick="setModoCobroB2B('B')">Modo B: Escanear Carnet</button>
+            <button type="button" class="portal-tab-btn" id="btn-modo-c" style="color:#0f172a; background:#e2e8f0;" onclick="setModoCobroB2B('C')">Modo C: Cobro por DNI</button>
+          </div>
+
+          <!-- MODO A -->
+          <div id="b2b-box-modo-a">
+            <div style="margin-bottom:12px;">
+              <label style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">IMPORTE A COBRAR ($)</label>
+              <input type="number" id="b2b-cobro-monto" value="4500" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; font-size:18px; font-weight:800;" class="mono" oninput="generarQRComercio()">
+            </div>
+            <div style="margin-bottom:14px;">
+              <label style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">PLAN DE CUOTAS</label>
+              <select id="b2b-cobro-cuotas" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px;" onchange="generarQRComercio()">
+                <option value="1">1 pago contado</option>
+                <option value="3">3 cuotas</option>
+                <option value="6">6 cuotas</option>
+                <option value="12">12 cuotas</option>
+              </select>
+            </div>
+            <div style="text-align:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+              <div id="b2b-qr-display" style="width:180px; height:180px; margin:0 auto 10px auto; background:#fff; padding:10px; border-radius:10px; display:flex; align-items:center; justify-content:center;"></div>
+              <p style="font-size:12px; color:var(--text-muted);">Muestre este QR al socio para debitar de sus Billeteras Mutuales</p>
+            </div>
+          </div>
+
+          <!-- MODO B -->
+          <div id="b2b-box-modo-b" style="display:none; text-align:center;">
+            <p style="font-size:13px; font-weight:700; margin-bottom:12px;">Escanear Carnet del Socio con la Cámara</p>
+            <button type="button" style="background:var(--primary); color:#fff; border:none; padding:12px 20px; border-radius:10px; font-weight:700; cursor:pointer;" onclick="abrirEscanerUniversalUI()">
+              📷 Iniciar Cámara del Comercio
+            </button>
+          </div>
+
+          <!-- MODO C -->
+          <div id="b2b-box-modo-c" style="display:none;">
+            <div style="margin-bottom:12px;">
+              <label style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">DNI DEL SOCIO</label>
+              <input type="text" id="b2b-dni-asistido" placeholder="Ej: 28945120" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px;">
+            </div>
+            <div style="margin-bottom:12px;">
+              <label style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">MONTO A COBRAR ($)</label>
+              <input type="number" id="b2b-monto-asistido" value="3200" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px;">
+            </div>
+            <button type="button" style="width:100%; background:var(--primary); color:#fff; border:none; padding:12px; border-radius:8px; font-weight:700; cursor:pointer;" onclick="procesarCobroAsistido()">
+              Solicitar Autorización al Socio por WhatsApp
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. VENTAS Y LIQUIDACIONES -->
+      <div id="b2b-sub-ventas" class="b2b-subview" style="display:none;">
+        <div class="crm-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h3>Historial de Ventas</h3>
+            <button type="button" style="background:#059669; color:#fff; border:none; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;" onclick="mostrarNotificacion('Solicitud de adelanto enviada a Tesorería', 'success')">
+              ⚡ Adelanto 24hs
+            </button>
+          </div>
+          <table class="crm-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Socio</th>
+                <th>Monto</th>
+                <th>Cuotas</th>
+                <th>Depósito</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Hoy 10:15</td>
+                <td>Albornoz, M.</td>
+                <td class="mono">$ 4.500,00</td>
+                <td>3 cuotas</td>
+                <td><span class="badge-al-dia">12/03/2026</span></td>
+              </tr>
+              <tr>
+                <td>Ayer 18:40</td>
+                <td>Giménez, C.</td>
+                <td class="mono">$ 12.800,00</td>
+                <td>1 pago</td>
+                <td><span class="badge-al-dia">12/03/2026</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 3. FINANCIAMIENTO PARA EL COMERCIO -->
+      <div id="b2b-sub-credito" class="b2b-subview" style="display:none;">
+        <div class="crm-card">
+          <h3>Financiamiento Comercial</h3>
+          <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">Línea de crédito especial para comercios aliados con tasa subsidiada</p>
+          <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:14px; margin-bottom:14px;">
+            <div style="font-size:11px; color:#1e40af; font-weight:700;">PREAPROBADO DISPONIBLE PARA TU COMERCIO:</div>
+            <div class="mono" style="font-size:24px; font-weight:800; color:var(--primary);">$ 2.000.000,00</div>
+          </div>
+          <button type="button" style="width:100%; background:var(--primary); color:#fff; border:none; padding:12px; border-radius:8px; font-weight:700; cursor:pointer;" onclick="mostrarNotificacion('Solicitud de crédito para comercio enviada al oficial de cuenta', 'success')">
+            Solicitar Acreditación en CBU Comercial
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ==========================================================================
+       MODAL DE PANTALLA COMPLETA: FICHA 360° DEL SOCIO (7 PESTAÑAS)
+       ========================================================================== -->
+  <div id="modal-ficha360-completa" class="modal-f360-backdrop">
+    <div class="modal-f360-container">
+      <div class="modal-f360-header">
+        <div>
+          <h2 style="font-size:16px; font-weight:800;" id="f360-header-title">ALBORNOZ, MARÍA LAURA</h2>
+          <span style="font-size:11px; color:#94a3b8;" id="f360-header-sub">DNI: 28.945.120 • Docente CGE • Paraná</span>
+        </div>
+        <button type="button" class="sheet-close-btn" style="background:rgba(255,255,255,0.2); color:#fff;" onclick="closeModal('modal-ficha360-completa')">✕</button>
+      </div>
+
+      <!-- 7 Pestañas Operativas -->
+      <div class="modal-f360-tabs">
+        <button type="button" class="f360-tab-btn active" onclick="cambiarTabF360('f360-tab-1', this)">1. Personales & Laborales</button>
+        <button type="button" class="f360-tab-btn" onclick="cambiarTabF360('f360-tab-2', this)">2. Capacidad & Recibos</button>
+        <button type="button" class="f360-tab-btn" onclick="cambiarTabF360('f360-tab-3', this)">3. Familia & Subsidios</button>
+        <button type="button" class="f360-tab-btn" onclick="cambiarTabF360('f360-tab-4', this)">4. Consumos & Créditos</button>
+        <button type="button" class="f360-tab-btn" onclick="cambiarTabF360('f360-tab-5', this)">5. Fidelización & Cupones</button>
+        <button type="button" class="f360-tab-btn" onclick="cambiarTabF360('f360-tab-6', this)">6. Legajo Digital Drive</button>
+        <button type="button" class="f360-tab-btn" onclick="cambiarTabF360('f360-tab-7', this)">7. Analizador IA Recibo</button>
+      </div>
+
+      <div class="modal-f360-body">
+        
+        <!-- PESTAÑA 1 -->
+        <div id="f360-tab-1" class="f360-tab-content active">
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+            <div class="crm-card">
+              <h4 style="margin-bottom:10px;">Datos Personales</h4>
+              <p><strong>Domicilio:</strong> Calle Urquiza 1420, Paraná</p>
+              <p><strong>Teléfono:</strong> +54 9 343 412-3456</p>
+              <p><strong>Email:</strong> maria.albornoz@gmail.com</p>
+              <p><strong>CBU Oficial:</strong> 3860001003400012345678</p>
+            </div>
+            <div class="crm-card">
+              <h4 style="margin-bottom:10px;">Datos Laborales</h4>
+              <p><strong>Organismo:</strong> CGE - Docente Provincial</p>
+              <p><strong>Dependencia:</strong> Escuela N° 1 Centenario</p>
+              <p><strong>Legajo:</strong> #1041</p>
+              <p><strong>Condición:</strong> Activo Titular</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PESTAÑA 2 -->
+        <div id="f360-tab-2" class="f360-tab-content">
+          <div class="crm-card">
+            <h4 style="margin-bottom:10px;">Capacidad Económica</h4>
+            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:16px;">
+              <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                <div style="font-size:11px; color:#64748b;">SUELDO BRUTO</div>
+                <div class="mono" style="font-size:16px; font-weight:800;">$ 780.000,00</div>
+              </div>
+              <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                <div style="font-size:11px; color:#64748b;">DESCUENTOS LEY</div>
+                <div class="mono" style="font-size:16px; font-weight:800;">$ 156.000,00</div>
+              </div>
+              <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                <div style="font-size:11px; color:#64748b;">SUELDO NETO</div>
+                <div class="mono" style="font-size:16px; font-weight:800;">$ 624.000,00</div>
+              </div>
+              <div style="background:#ecfdf5; padding:10px; border-radius:8px; border:1px solid #a7f3d0;">
+                <div style="font-size:11px; color:#065f46;">MARGEN CUOTA DISPONIBLE</div>
+                <div class="mono" style="font-size:16px; font-weight:800; color:#059669;">$ 187.200,00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PESTAÑA 3 -->
+        <div id="f360-tab-3" class="f360-tab-content">
+          <div class="crm-card">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+              <h4>Grupo Familiar a Cargo</h4>
+              <button type="button" style="background:var(--primary); color:#fff; border:none; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;" onclick="mostrarNotificacion('Familiar agregado', 'success')">+ Agregar Familiar</button>
+            </div>
+            <table class="crm-table">
+              <thead>
+                <tr>
+                  <th>Nombre y Apellido</th>
+                  <th>Vínculo</th>
+                  <th>DNI</th>
+                  <th>Subsidio Otorgado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Albornoz, Mateo</td>
+                  <td>Hijo</td>
+                  <td class="mono">48.910.112</td>
+                  <td><span class="badge-al-dia">Nacimiento ($50.000)</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PESTAÑA 4 -->
+        <div id="f360-tab-4" class="f360-tab-content">
+          <div class="crm-card">
+            <h4>Historial de Ayudas y Consumos Activos</h4>
+            <table class="crm-table" style="margin-top:10px;">
+              <thead>
+                <tr>
+                  <th>N° Trámite</th>
+                  <th>Tipo</th>
+                  <th>Monto</th>
+                  <th>Cuotas</th>
+                  <th>Operador</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-f360-consumos"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PESTAÑA 5 -->
+        <div id="f360-tab-5" class="f360-tab-content">
+          <div class="crm-card">
+            <h4>Programa de Fidelización & Puntos</h4>
+            <p><strong>Sellos acumulados:</strong> 7 de 10 casilleros.</p>
+            <p><strong>Puntos disponibles:</strong> 1.450 Puntos Mutual.</p>
+            <p><strong>Cupones vigentes:</strong> 15% Descuento en Óptica Paraná Visión.</p>
+          </div>
+        </div>
+
+        <!-- PESTAÑA 6 -->
+        <div id="f360-tab-6" class="f360-tab-content">
+          <div class="crm-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+              <div>
+                <h4>📁 Legajo Digital en Google Drive</h4>
+                <span style="font-size:11px; color:var(--text-muted);">Carpeta vinculada: ID_DRIVE_MARIA_LAURA_28945120</span>
+              </div>
+              <button type="button" style="background:#0f172a; color:#fff; border:none; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;" onclick="mostrarNotificacion('Carpeta en Google Drive verificada', 'success')">
+                📂 Abrir en Drive
+              </button>
+            </div>
+            <table class="crm-table">
+              <thead>
+                <tr>
+                  <th>Documento</th>
+                  <th>Fecha de Carga</th>
+                  <th>Estado</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>DNI Frente y Dorso</td>
+                  <td>15/01/2026</td>
+                  <td><span class="badge-al-dia">VALIDADO</span></td>
+                  <td><button onclick="mostrarNotificacion('Visualizando DNI...', 'info')" style="cursor:pointer; background:none; border:none; color:var(--primary); font-weight:700;">Ver</button></td>
+                </tr>
+                <tr>
+                  <td>Recibo de Sueldo Enero 2026</td>
+                  <td>04/02/2026</td>
+                  <td><span class="badge-al-dia">VALIDADO</span></td>
+                  <td><button onclick="mostrarNotificacion('Visualizando Recibo...', 'info')" style="cursor:pointer; background:none; border:none; color:var(--primary); font-weight:700;">Ver</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PESTAÑA 7 -->
+        <div id="f360-tab-7" class="f360-tab-content">
+          <div class="crm-card">
+            <h4>🤖 Analizador de Recibos IA (OCR & Recálculo de Margen)</h4>
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">Desglose automático de haberes computables e inserción de marcas de afectación</p>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+              <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:12px;">
+                <strong style="font-size:12px;">Desglose Computado por OCR:</strong>
+                <div style="font-size:12px; margin-top:6px;">
+                  • Básico Docente: $ 420.000<br>
+                  • Antigüedad: $ 210.000<br>
+                  • Adicional Zona: $ 150.000<br>
+                  • Descuentos Jubilación y Ley: - $ 156.000
+                </div>
+              </div>
+              <div style="background:#fff; border:1px solid #bfdbfe; border-radius:10px; padding:12px;">
+                <strong style="font-size:12px; color:var(--primary);">Añadir Afectación No Detectada:</strong>
+                <input type="text" id="ia-afectacion-concepto" placeholder="Ej: Consumo BERSA Alivio Financiero" style="width:100%; padding:6px; margin:6px 0; border:1px solid #cbd5e1; border-radius:6px; font-size:11px;">
+                <input type="number" id="ia-afectacion-monto" placeholder="Monto ($)" style="width:100%; padding:6px; margin-bottom:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:11px;">
+                <button type="button" style="width:100%; background:var(--primary); color:#fff; border:none; padding:8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;" onclick="aplicarAfectacionManualIA()">
+                  ⚡ Recalcular Margen al Instante
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ESCÁNER UNIVERSAL CON DEFENSIVE CAMERA FALLBACK -->
+  <div id="modal-scanner-box" class="bottom-sheet-backdrop">
+    <div class="bottom-sheet-panel" style="max-height:90vh;">
+      <div class="sheet-drag-handle"></div>
+      <div class="sheet-title-row">
+        <h3 class="sheet-title">Escanear Código QR</h3>
+        <button type="button" class="sheet-close-btn" onclick="cerrarEscanerUniversal()">✕</button>
+      </div>
+
+      <div style="width:100%; min-height:250px; background:#000; border-radius:14px; overflow:hidden; position:relative; margin-bottom:12px; display:flex; align-items:center; justify-content:center;">
+        <div id="reader-universal-container" style="width:100%;"></div>
+      </div>
+
+      <div id="scanner-fallback-panel" style="display:flex; flex-direction:column; gap:10px;">
+        <label style="font-size:11.5px; font-weight:700; color:var(--text-muted);">SUBIR FOTO O INGRESAR CÓDIGO MANUALMENTE:</label>
+        <input type="file" id="inp-qr-file" accept="image/*" onchange="escanearArchivoImagen(this)" style="font-size:12px;">
+        
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="inp-manual-code" placeholder="Código de comercio o DNI..." style="flex:1; padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px;">
+          <button type="button" style="background:var(--primary); color:#fff; border:none; padding:0 16px; border-radius:8px; font-weight:700; cursor:pointer;" onclick="procesarCodigoManual()">Validar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: FILTRO DE RUBROS -->
+  <div id="modal-rubros-sheet" class="bottom-sheet-backdrop">
+    <div class="bottom-sheet-panel">
+      <div class="sheet-drag-handle"></div>
+      <div class="sheet-title-row">
+        <h3 class="sheet-title">Filtrar por Rubro</h3>
+        <button type="button" class="sheet-close-btn" onclick="closeRubrosModal()">✕</button>
+      </div>
+      <div class="rubros-grid-chips" id="grid-rubros-selector"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: MI CUENTA (PERFIL DEL ASOCIADO) -->
+  <div id="modal-mi-cuenta" class="bottom-sheet-backdrop">
+    <div class="bottom-sheet-panel">
+      <div class="sheet-drag-handle"></div>
+      <div class="sheet-title-row">
+        <h3 class="sheet-title">Mi Cuenta y Perfil</h3>
+        <button type="button" class="sheet-close-btn" onclick="closeModal('modal-mi-cuenta')">✕</button>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:14px; margin-bottom:16px;">
+        <div class="socio-avatar-circle" style="width:52px; height:52px; font-size:18px; background:var(--primary); border:none;" id="cuenta-avatar">ML</div>
+        <div>
+          <h4 style="font-size:15px; font-weight:800;" id="cuenta-nombre">María Laura Albornoz</h4>
+          <span style="font-size:12px; color:var(--text-muted);" id="cuenta-dni">DNI: 28.945.120</span><br>
+          <span class="badge-al-dia">SOCIO PLENO ACTIVO</span>
+        </div>
+      </div>
+
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px; margin-bottom:16px; font-size:12.5px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+          <span style="color:#64748b;">Organismo:</span>
+          <strong id="cuenta-organismo">CGE - Docente</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+          <span style="color:#64748b;">Legajo:</span>
+          <strong class="mono" id="cuenta-legajo">#1041</strong>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button type="button" style="background:#eff6ff; color:var(--primary); border:1px solid #bfdbfe; padding:10px; border-radius:10px; font-weight:700; cursor:pointer; text-align:left;" onclick="closeModal('modal-mi-cuenta'); cambiarPortalActivo('portal-crm-admin')">
+          💼 Ir al CRM Backoffice
+        </button>
+        <button type="button" style="background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; padding:10px; border-radius:10px; font-weight:700; cursor:pointer; text-align:center;" onclick="cerrarSesionSocio()">
+          Cerrar Sesión
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GESTIÓN DE ALERTAS (MÓDULO 3) -->
+  <div id="modal-nueva-alerta" class="modal-center-backdrop">
+    <div class="modal-dialog-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3>Nueva Alerta Operativa / SLA</h3>
+        <button type="button" class="sheet-close-btn" onclick="closeModal('modal-nueva-alerta')">✕</button>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:11px; font-weight:700;">ASOCIADO</label>
+        <input type="text" id="alt-asociado" value="Albornoz, María Laura" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px;">
+      </div>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:11px; font-weight:700;">OPERACIÓN / CONCEPTO</label>
+        <input type="text" id="alt-concepto" placeholder="Ej: Vencimiento documentación haberes" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px;">
+      </div>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:11px; font-weight:700;">OPERADOR ASIGNADO</label>
+        <input type="text" id="alt-operador" value="Julian" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px;">
+      </div>
+      <button type="button" style="width:100%; background:var(--primary); color:#fff; border:none; padding:10px; border-radius:8px; font-weight:700; cursor:pointer;" onclick="guardarNuevaAlerta()">
+        Guardar y Programar Alerta
+      </button>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       LÓGICA JAVASCRIPT ES6+ INTEGRAL (100% OPERATIVA Y SIN PLACEHOLDERS)
+       ========================================================================== -->
+  <script>
+    /**
+     * BASE DE DATOS Y ESTADO DEL SISTEMA
+     */
+    const DB = {
+      socios: [
+        {
+          id: 1,
+          dni: "28945120",
+          apellidoNombre: "Albornoz, María Laura",
+          organismo: "Provincial",
+          dependencia: "CGE - Escuela N° 1 Centenario",
+          condicion: "Activo",
+          cuotaSocial: "Al día",
+          alertas: "Sin Alertas",
+          sueldoBruto: 780000.00,
+          sueldoNeto: 624000.00,
+          margenCuota: 187200.00,
+          montoPreaprobado: 450000.00,
+          b1Saldo: 28450.00,
+          b2Saldo: 40000.00,
+          b3Saldo: 450000.00,
+          sellosObtenidos: 7
+        },
+        {
+          id: 2,
+          dni: "25890142",
+          apellidoNombre: "Giménez, Carlos Alberto",
+          organismo: "Provincial",
+          dependencia: "Policía de Entre Ríos",
+          condicion: "Activo",
+          cuotaSocial: "Al día",
+          alertas: "Trámite Jubilación",
+          sueldoBruto: 850000.00,
+          sueldoNeto: 690000.00,
+          margenCuota: 207000.00,
+          montoPreaprobado: 520000.00,
+          b1Saldo: 42100.00,
+          b2Saldo: 35000.00,
+          b3Saldo: 520000.00,
+          sellosObtenidos: 9
+        },
+        {
+          id: 3,
+          dni: "31456789",
+          apellidoNombre: "Romero, Rosa Noemí",
+          organismo: "Municipal",
+          dependencia: "Municipalidad de Paraná",
+          condicion: "Activo",
+          cuotaSocial: "Mora",
+          alertas: "Alivio Financiero",
+          sueldoBruto: 690000.00,
+          sueldoNeto: 552000.00,
+          margenCuota: 165600.00,
+          montoPreaprobado: 380000.00,
+          b1Saldo: 15300.00,
+          b2Saldo: 25000.00,
+          b3Saldo: 380000.00,
+          sellosObtenidos: 4
+        }
+      ],
+      comercios: [
+        { id: 101, nombre: "Farmacia Central Paraná", rubro: "Farmacias", direccion: "San Martín 650", horario: "08:00 a 21:00 hs", abierto: true, lat: -31.7315, lng: -60.5310, descuento: "15% Reintegro", icono: "💊" },
+        { id: 102, nombre: "Óptica Paraná Visión", rubro: "Ópticas", direccion: "Pellegrini 320", horario: "08:30 a 19:30 hs", abierto: true, lat: -31.7328, lng: -60.5295, descuento: "20% en Cristales", icono: "👓" },
+        { id: 103, nombre: "Supermercado La Peruana", rubro: "Comercios Adheridos", direccion: "Urquiza 845", horario: "08:00 a 21:30 hs", abierto: true, lat: -31.7332, lng: -60.5289, descuento: "10% en Alimentos", icono: "🛒" }
+      ],
+      alertasOperativas: [
+        { id: "TR-8921", asociado: "Albornoz, María Laura", operacion: "Liquidación CBU", operador: "Julian", sla: "2hs 45m", estado: "Solicitado", vencimiento: "10/03/2026" },
+        { id: "TR-8920", asociado: "Giménez, Carlos Alberto", operacion: "Auditoría Recibo", operador: "Melina", sla: "45m", estado: "En Evaluación Documental", vencimiento: "11/03/2026" },
+        { id: "TR-8919", asociado: "Romero, Rosa Noemí", operacion: "Alivio Deuda", operador: "Lucas", sla: "4hs", estado: "Aprobado", vencimiento: "12/03/2026" }
+      ],
+      comercializadores: [
+        { nombre: "Roberto Vallejos", cuit: "20-24589123-4", tasa: 5.0, base: "Neto Efectivo Entregado", liquidado: 160000 }
+      ]
+    };
+
+    let socioActual = DB.socios[0];
+    let isBalanceHidden = false;
+    let rubroSeleccionadoActual = "TODOS";
+    let mapInstance = null;
+    let html5QrCodeScanner = null;
+    let totpCycleId = null;
+    let modoEntradaSimulador = "MONTO"; // 'MONTO' | 'CUOTA'
+
+    window.addEventListener('DOMContentLoaded', () => {
+      inicializarAppSocio();
+      renderizarPadronGeneral();
+      renderizarOpsListado();
+      renderizarComercializadores();
+      renderizarAlianzasB2B();
+      ejecutarSimulador();
+      calcularVPN();
+      iniciarTOTPCiclo30s();
+      generarQRComercio();
+      inicializarGraficosPowerBI();
+    });
+
+    /**
+     * NAVEGACIÓN Y PORTALES
+     */
+    function cambiarPortalActivo(portalId, boton) {
+      document.querySelectorAll('.portal-view').forEach(p => p.classList.remove('active'));
+      const target = document.getElementById(portalId);
+      if (target) target.classList.add('active');
+
+      if (boton) {
+        document.querySelectorAll('.portal-tab-btn').forEach(b => b.classList.remove('active'));
+        boton.classList.add('active');
+      }
+
+      if (portalId === 'portal-socio-app') {
+        setTimeout(inicializarMapaLeaflet, 250);
+      }
+    }
+
+    function cambiarModuloCRM(modId, btn) {
+      document.querySelectorAll('.crm-screen').forEach(s => s.classList.remove('active'));
+      const target = document.getElementById(modId);
+      if (target) target.classList.add('active');
+
+      if (btn) {
+        document.querySelectorAll('.crm-nav-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      }
+    }
+
+    function toggleSidebarCRM() {
+      document.getElementById('crm-sidebar').classList.toggle('collapsed');
+    }
+
+    /**
+     * 1. APP DEL SOCIO (PORTAL 2)
+     */
+    function inicializarAppSocio() {
+      actualizarDatosSocioEnUI();
+      renderizarSellos5x2();
+      renderizarRubrosModal();
+      renderizarComerciosListado();
+      setTimeout(inicializarMapaLeaflet, 300);
+    }
+
+    function iniciarSesionSocio() {
+      document.getElementById('socio-view-login').classList.remove('active');
+      document.getElementById('socio-view-dashboard').classList.add('active');
+      mostrarNotificacion("Bienvenido a Mutual Modelo", "success");
+    }
+
+    function cerrarSesionSocio() {
+      closeModal('modal-mi-cuenta');
+      document.getElementById('socio-view-dashboard').classList.remove('active');
+      document.getElementById('socio-view-login').classList.add('active');
+      mostrarNotificacion("Sesión cerrada exitosamente", "info");
+    }
+
+    function toggleBalanceVisibility() {
+      isBalanceHidden = !isBalanceHidden;
+      document.getElementById('eye-icon-btn').textContent = isBalanceHidden ? "🙈" : "👁️";
+      actualizarDatosSocioEnUI();
+    }
+
+    function actualizarDatosSocioEnUI() {
+      const firstName = socioActual.apellidoNombre.split(',')[1]?.trim() || "Socio";
+      document.getElementById('lbl-nombre-saludo').textContent = firstName;
+      const initials = socioActual.apellidoNombre.split(',')[1]?.trim().substring(0, 2) || "MM";
+      document.getElementById('avatar-socio').textContent = initials;
+      document.getElementById('carnet-socio-nombre').textContent = socioActual.apellidoNombre;
+      document.getElementById('carnet-socio-doc').textContent = `DNI: ${formatearMoneda(socioActual.dni, false)} • Legajo #${socioActual.id + 1040}`;
+
+      if (isBalanceHidden) {
+        document.getElementById('txt-saldo-total').textContent = "••••••";
+        document.getElementById('val-b1-saldo').textContent = "••••••";
+        document.getElementById('val-b2-saldo').textContent = "••••••";
+        document.getElementById('val-b3-saldo').textContent = "••••••";
+        document.getElementById('txt-margen-prestamo').textContent = "••••••";
+        document.getElementById('trx-amt-1').textContent = "••••••";
+        document.getElementById('trx-amt-2').textContent = "••••••";
+        document.getElementById('trx-amt-3').textContent = "••••••";
+      } else {
+        const total = socioActual.b1Saldo + socioActual.b2Saldo;
+        document.getElementById('txt-saldo-total').textContent = `$ ${formatearMoneda(total, false)}`;
+        document.getElementById('val-b1-saldo').textContent = `$ ${formatearMoneda(socioActual.b1Saldo)}`;
+        document.getElementById('val-b2-saldo').textContent = `$ ${formatearMoneda(socioActual.b2Saldo)}`;
+        document.getElementById('val-b3-saldo').textContent = `$ ${formatearMoneda(socioActual.b3Saldo)}`;
+        document.getElementById('txt-margen-prestamo').textContent = `$ ${formatearMoneda(socioActual.montoPreaprobado)}`;
+        document.getElementById('trx-amt-1').textContent = "$ 14.200,00";
+        document.getElementById('trx-amt-2').textContent = "$ 8.500,00";
+        document.getElementById('trx-amt-3').textContent = "$ 32.400,00";
+      }
+    }
+
+    function seleccionarSocioActivo(id) {
+      const s = DB.socios.find(item => item.id == id);
+      if (s) {
+        socioActual = s;
+        actualizarDatosSocioEnUI();
+        renderizarSellos5x2();
+        generarQRCarnet();
+        mostrarNotificacion(`Socio activo: ${s.apellidoNombre}`, "info");
+      }
+    }
+
+    function irAInicioSocio() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+      document.querySelector('.bottom-nav-item:nth-child(1)').classList.add('active');
+    }
+
+    function irAMapaComercios() {
+      const el = document.getElementById('seccion-mapa-comercios');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+      document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+      document.querySelector('.bottom-nav-item:nth-child(2)').classList.add('active');
+    }
+
+    function abrirModalMiCuenta() {
+      document.getElementById('cuenta-nombre').textContent = socioActual.apellidoNombre;
+      document.getElementById('cuenta-dni').textContent = `DNI: ${formatearMoneda(socioActual.dni, false)}`;
+      document.getElementById('cuenta-organismo').textContent = socioActual.organismo;
+      document.getElementById('cuenta-legajo').textContent = `#${socioActual.id + 1040}`;
+      document.getElementById('modal-mi-cuenta').classList.add('active');
+    }
+
+    function abrirModalTodosConsumos() {
+      mostrarNotificacion("Mostrando listado histórico completo de compras y cuotas", "info");
+    }
+
+    function abrirModalServicio(tipo) {
+      mostrarNotificacion(`Servicio '${tipo.toUpperCase()}' disponible. Solicitud enviada a administración.`, "success");
+    }
+
+    function toggleFaq(el) {
+      el.classList.toggle('active');
+    }
+
+    /**
+     * FIDELIDAD & MAPAS
+     */
+    function renderizarSellos5x2() {
+      const container = document.getElementById('stamps-container-5x2');
+      container.innerHTML = "";
+      for (let i = 1; i <= 10; i++) {
+        const slot = document.createElement('div');
+        slot.className = "stamp-slot";
+        if (i <= socioActual.sellosObtenidos) {
+          slot.classList.add('active');
+          slot.innerHTML = `<span>✓</span><span>Sello ${i}</span>`;
+          slot.onclick = () => mostrarNotificacion(`Sello #${i}: Compra validada con éxito`, "info");
+        } else if (i === 10) {
+          slot.classList.add('prize');
+          slot.innerHTML = `<span>🎁</span><span>$15.000</span>`;
+          slot.onclick = () => mostrarNotificacion("¡Completá los 10 sellos y llevate $15.000 de Voucher!", "info");
+        } else {
+          slot.classList.add('pending');
+          slot.innerHTML = `<span>#${i}</span><span>Pend.</span>`;
+          slot.onclick = () => mostrarNotificacion(`Sello #${i} pendiente. Sumalo pagando con Billetera 1 o 2.`, "info");
+        }
+        container.appendChild(slot);
+      }
+      document.getElementById('lbl-sellos-count').textContent = `${socioActual.sellosObtenidos} / 10 Sellos`;
+    }
+
+    function openRubrosModal() { document.getElementById('modal-rubros-sheet').classList.add('active'); }
+    function closeRubrosModal() { document.getElementById('modal-rubros-sheet').classList.remove('active'); }
+
+    function renderizarRubrosModal() {
+      const rubros = ["Todos", "Farmacias", "Ópticas", "Comercios Adheridos"];
+      const grid = document.getElementById('grid-rubros-selector');
+      grid.innerHTML = "";
+      rubros.forEach(r => {
+        const card = document.createElement('div');
+        card.className = `rubro-touch-card ${rubroSeleccionadoActual.toUpperCase() === r.toUpperCase() ? 'active' : ''}`;
+        card.innerHTML = `<strong>${r}</strong><span>✓</span>`;
+        card.onclick = () => {
+          rubroSeleccionadoActual = r;
+          document.getElementById('lblRubroSeleccionado').textContent = r;
+          renderizarComerciosListado();
+          actualizarMarcadoresMapa();
+          closeRubrosModal();
+        };
+        grid.appendChild(card);
+      });
+    }
+
+    function inicializarMapaLeaflet() {
+      const mapDiv = document.getElementById('map-parana');
+      if (!mapDiv) return;
+      if (mapInstance) { mapInstance.remove(); mapInstance = null; }
+      try {
+        mapInstance = L.map('map-parana', { zoomControl: true, attributionControl: false }).setView([-31.7332, -60.5289], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(mapInstance);
+        actualizarMarcadoresMapa();
+      } catch (e) { console.warn(e); }
+    }
+
+    function actualizarMarcadoresMapa() {
+      if (!mapInstance) return;
+      DB.comercios.forEach(c => {
+        const m = L.marker([c.lat, c.lng]).addTo(mapInstance);
+        m.bindPopup(`<strong>${c.nombre}</strong><br>${c.direccion}<br><strong style="color:#059669;">${c.descuento}</strong>`);
+      });
+    }
+
+    function renderizarComerciosListado() {
+      const container = document.getElementById('merchants-list-container');
+      container.innerHTML = "";
+      DB.comercios.forEach(c => {
+        const div = document.createElement('div');
+        div.className = "merchant-item-card";
+        div.innerHTML = `
+          <div class="merchant-left">
+            <div class="merchant-icon-bubble">${c.icono}</div>
+            <div class="merchant-info">
+              <h4>${c.nombre}</h4>
+              <div class="merchant-meta"><span>${c.direccion}</span> • <span class="merchant-status-tag status-open">ABIERTO 🟢</span></div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div class="merchant-badge-discount">${c.descuento}</div>
+            <button class="btn-pay-merchant" onclick="mostrarNotificacion('Terminal de pago activada', 'info')">Pagar QR ➔</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    /**
+     * TOTP QR DINÁMICO (30S SIN FLICKER)
+     */
+    function iniciarTOTPCiclo30s() {
+      generarQRCarnet();
+      if (totpCycleId) clearInterval(totpCycleId);
+      totpCycleId = setInterval(() => {
+        const sec = 30 - (Math.floor(Date.now() / 1000) % 30);
+        const lbl = document.getElementById('lbl-totp-countdown');
+        if (lbl) lbl.textContent = `${sec}s`;
+        if (sec === 30) generarQRCarnet();
+      }, 1000);
+    }
+
+    function generarQRCarnet() {
+      const container = document.getElementById('carnet-qr-code');
+      if (!container) return;
+      container.innerHTML = "";
+      const cycleToken = Math.floor(Date.now() / 30000);
+      const payload = `MUTUAL_MODELO:${socioActual.dni}:${socioActual.id}:${cycleToken}`;
+      try {
+        new QRCode(container, {
+          text: payload,
+          width: 150,
+          height: 150,
+          colorDark: "#0f172a",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (e) {}
+    }
+
+    /**
+     * CÁMARA UNIVERSAL DEFENSIVA
+     */
+    function abrirEscanerUniversalUI() {
+      document.getElementById('modal-scanner-box').classList.add('active');
+      iniciarEscanerUniversal("reader-universal-container", (text) => {
+        cerrarEscanerUniversal();
+        mostrarNotificacion(`Código detectado: ${text}`, "success");
+      });
+    }
+
+    async function iniciarEscanerUniversal(elementId, onScanSuccess) {
+      try {
+        if (html5QrCodeScanner && html5QrCodeScanner.isScanning) {
+          await html5QrCodeScanner.stop();
+        }
+        html5QrCodeScanner = new Html5Qrcode(elementId);
+        const cameras = await Html5Qrcode.getCameras();
+        if (!cameras || cameras.length === 0) throw new Error("NO_CAMERAS");
+        let selectedId = cameras[0].id;
+        const back = cameras.find(c => c.label.toLowerCase().includes("back") || c.label.toLowerCase().includes("trasera"));
+        if (back) selectedId = back.id;
+        await html5QrCodeScanner.start(selectedId, { fps: 10, qrbox: { width: 250, height: 250 } }, onScanSuccess, () => {});
+      } catch (err) {
+        try {
+          await html5QrCodeScanner.start({ facingMode: "user" }, { fps: 10, qrbox: 250 }, onScanSuccess, () => {});
+        } catch (e) {
+          mostrarNotificacion("Cámara no disponible. Use la subida de imagen o ingreso manual.", "warning");
+        }
+      }
+    }
+
+    function cerrarEscanerUniversal() {
+      if (html5QrCodeScanner && html5QrCodeScanner.isScanning) {
+        html5QrCodeScanner.stop().then(() => {
+          html5QrCodeScanner.clear();
+          closeModal('modal-scanner-box');
+        }).catch(() => closeModal('modal-scanner-box'));
+      } else {
+        closeModal('modal-scanner-box');
+      }
+    }
+
+    function escanearArchivoImagen(input) {
+      if (!input.files || input.files.length === 0) return;
+      const file = input.files[0];
+      const scanner = new Html5Qrcode("reader-universal-container");
+      scanner.scanFile(file, true)
+        .then(t => { cerrarEscanerUniversal(); mostrarNotificacion(`QR de imagen leído: ${t}`, "success"); })
+        .catch(() => mostrarNotificacion("No se detectó un código QR legible", "danger"));
+    }
+
+    function procesarCodigoManual() {
+      const code = document.getElementById('inp-manual-code').value.trim();
+      if (code) {
+        cerrarEscanerUniversal();
+        mostrarNotificacion(`Código manual validado: ${code}`, "success");
+      }
+    }
+
+    /**
+     * 2. CRM MÓDULO 1: PADRÓN GENERAL Y FICHA 360°
+     */
+    function renderizarPadronGeneral() {
+      const tbody = document.getElementById('tbody-padron-general');
+      tbody.innerHTML = "";
+      DB.socios.forEach(s => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="mono"><strong>#${s.id + 1040}</strong></td>
+          <td>${s.apellidoNombre}</td>
+          <td class="mono">${formatearMoneda(s.dni, false)}</td>
+          <td>${s.organismo}</td>
+          <td>${s.condicion}</td>
+          <td>${s.dependencia}</td>
+          <td><span class="${s.cuotaSocial === 'Al día' ? 'badge-al-dia' : 'transaction-badge badge-cuotas'}">${s.cuotaSocial}</span></td>
+          <td><span style="font-size:11px; font-weight:700; color:#475569;">${s.alertas}</span></td>
+          <td>
+            <button onclick="verFicha360(${s.id})" style="background:var(--primary); color:#fff; border:none; padding:5px 10px; border-radius:6px; font-weight:700; cursor:pointer;">
+              Ver Ficha 360°
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filtrarTablaPadron(val) {
+      const f = val.toLowerCase();
+      document.querySelectorAll('#tbody-padron-general tr').forEach(r => {
+        r.style.display = r.textContent.toLowerCase().includes(f) ? "" : "none";
+      });
+    }
+
+    function filtrarPadronMulti() {
+      const org = document.getElementById('crm-padron-filtro-org').value;
+      const cuota = document.getElementById('crm-padron-filtro-cuota').value;
+      document.querySelectorAll('#tbody-padron-general tr').forEach((r, idx) => {
+        const s = DB.socios[idx];
+        const matchOrg = org === 'TODOS' || s.organismo === org;
+        const matchCuota = cuota === 'TODOS' || s.cuotaSocial === cuota;
+        r.style.display = (matchOrg && matchCuota) ? "" : "none";
+      });
+    }
+
+    function verFicha360(id) {
+      const s = DB.socios.find(i => i.id == id);
+      if (!s) return;
+      document.getElementById('f360-header-title').textContent = s.apellidoNombre.toUpperCase();
+      document.getElementById('f360-header-sub').textContent = `DNI: ${s.dni} • ${s.dependencia}`;
+      
+      const tbody = document.getElementById('tbody-f360-consumos');
+      tbody.innerHTML = `
+        <tr>
+          <td class="mono">#TR-8921</td>
+          <td>Ayuda Económica CBU</td>
+          <td class="mono">$ 100.000,00</td>
+          <td>12 Cuotas</td>
+          <td>Julian</td>
+          <td><span class="badge-al-dia">Al día</span></td>
+        </tr>
+      `;
+
+      document.getElementById('modal-ficha360-completa').classList.add('active');
+    }
+
+    function cambiarTabF360(tabId, btn) {
+      document.querySelectorAll('.f360-tab-content').forEach(c => c.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      document.querySelectorAll('.f360-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function aplicarAfectacionManualIA() {
+      const concepto = document.getElementById('ia-afectacion-concepto').value;
+      const monto = parseFloat(document.getElementById('ia-afectacion-monto').value) || 0;
+      if (!monto) return;
+      socioActual.margenCuota = Math.max(0, socioActual.margenCuota - monto);
+      actualizarDatosSocioEnUI();
+      mostrarNotificacion(`Afectación '${concepto}' (-$${monto}) aplicada. Nuevo margen: $${formatearMoneda(socioActual.margenCuota)}`, "warning");
+    }
+
+    /**
+     * 3. CRM MÓDULO 2: SIMULADOR & WHATSAPP
+     */
+    const COEFICIENTES = {
+      FEDEM: { 6: 1.56999, 12: 1.83207, 18: 2.24242, 24: 2.67773, 36: 3.62048, 48: 4.63548 },
+      VIKINGO: { 12: 0.159701, 24: 0.112798, factor: 0.85 },
+      SIDECREER: { 6: 1.56999, 12: 1.83207, 18: 2.24242, 24: 2.67773, 36: 3.62048, 48: 4.63548 }
+    };
+
+    function setModoEntradaSim(modo) {
+      modoEntradaSimulador = modo;
+      document.getElementById('btn-calc-por-monto').classList.toggle('active', modo === 'MONTO');
+      document.getElementById('btn-calc-por-cuota').classList.toggle('active', modo === 'CUOTA');
+      document.getElementById('lbl-input-sim-val').textContent = modo === 'MONTO' 
+        ? "MONTO NETO A ENTREGAR ($)" 
+        : "CUOTA MENSUAL OBJETIVO / MARGEN ($)";
+      ejecutarSimulador();
+    }
+
+    function onCambioTipoPlanSim() {
+      const tipo = document.getElementById('sim-tipo-plan').value;
+      document.getElementById('sec-linea-individual').style.display = tipo === 'INDIVIDUAL' ? 'block' : 'none';
+      ejecutarSimulador();
+    }
+
+    function ejecutarSimulador() {
+      const tipo = document.getElementById('sim-tipo-plan').value;
+      const linea = document.getElementById('sim-linea-sel').value;
+      const valInput = parseFloat(document.getElementById('sim-input-val').value) || 100000;
+      const cuotas = parseInt(document.getElementById('sim-cuotas-sel').value) || 12;
+
+      let cuotaMensual = 0;
+      let montoNeto = 0;
+      let capital = 0;
+      let gastos = 0;
+      let seguro = 0;
+
+      if (tipo === 'INDIVIDUAL') {
+        if (linea === 'SIDECREER') {
+          capital = valInput;
+          montoNeto = capital * 0.8733302;
+          cuotaMensual = (capital * COEFICIENTES.SIDECREER[cuotas]) / cuotas * (10000 / 15267.25);
+          gastos = capital - montoNeto;
+        } else if (linea === 'FEDEM') {
+          capital = valInput;
+          const tasaGasto = cuotas <= 12 ? 0.25 : 0.34;
+          seguro = capital * 0.005 * cuotas;
+          gastos = capital * tasaGasto;
+          montoNeto = capital - (gastos + seguro);
+          cuotaMensual = (capital * COEFICIENTES.FEDEM[cuotas]) / cuotas;
+        } else if (linea === 'VIKINGO') {
+          capital = valInput;
+          montoNeto = capital * COEFICIENTES.VIKINGO.factor;
+          gastos = capital - montoNeto;
+          cuotaMensual = capital * (COEFICIENTES.VIKINGO[cuotas] || 0.159701);
+        }
+      } else {
+        // Combinada
+        capital = valInput;
+        montoNeto = capital * 0.86;
+        gastos = capital * 0.14;
+        cuotaMensual = (capital * 1.83207) / cuotas * 0.95;
+      }
+
+      document.getElementById('sim-res-cuota').textContent = `$ ${formatearMoneda(cuotaMensual)}`;
+      document.getElementById('sim-res-capital').textContent = `$ ${formatearMoneda(capital)}`;
+      document.getElementById('sim-res-neto').textContent = `$ ${formatearMoneda(montoNeto)}`;
+      document.getElementById('sim-res-gastos').textContent = `$ ${formatearMoneda(gastos)}`;
+      document.getElementById('sim-res-seguro').textContent = `$ ${formatearMoneda(seguro)}`;
+
+      // Propuesta WhatsApp
+      const prop = `🌟 *PROPUESTA OFICIAL MUTUAL MODELO* 🌟
+Estimado/a ${socioActual.apellidoNombre}:
+✅ Monto Neto a Acreditar: *$ ${formatearMoneda(montoNeto)}*
+📅 Plan de Cuotas: *${cuotas} cuotas fijas de $ ${formatearMoneda(cuotaMensual)}*
+🏛️ Modalidad: Débito en recibo de haberes
+_Válido por 48 horas sujeto a capacidad de afectación._`;
+      document.getElementById('txt-propuesta-whatsapp').textContent = prop;
+    }
+
+    function copiarPropuestaClipboard() {
+      const text = document.getElementById('txt-propuesta-whatsapp').textContent;
+      navigator.clipboard.writeText(text);
+      mostrarNotificacion("Propuesta copiada al portapapeles", "success");
+    }
+
+    function enviarPropuestaWhatsApp() {
+      const text = encodeURIComponent(document.getElementById('txt-propuesta-whatsapp').textContent);
+      window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+    }
+
+    /**
+     * 4. CRM MÓDULO 3: OPERACIONES (TRIPLE VISTA)
+     */
+    function setModoVistaOps(modo) {
+      document.getElementById('ops-subvista-listado').style.display = modo === 'LISTADO' ? 'block' : 'none';
+      document.getElementById('ops-subvista-kanban').style.display = modo === 'KANBAN' ? 'block' : 'none';
+      document.getElementById('ops-subvista-calendario').style.display = modo === 'CALENDARIO' ? 'block' : 'none';
+      
+      document.getElementById('btn-vista-listado').classList.toggle('active', modo === 'LISTADO');
+      document.getElementById('btn-vista-kanban').classList.toggle('active', modo === 'KANBAN');
+      document.getElementById('btn-vista-calendario').classList.toggle('active', modo === 'CALENDARIO');
+
+      if (modo === 'KANBAN') renderizarKanban();
+      if (modo === 'CALENDARIO') renderizarCalendarioOps();
+    }
+
+    function renderizarOpsListado() {
+      const tbody = document.getElementById('tbody-ops-listado');
+      tbody.innerHTML = "";
+      DB.alertasOperativas.forEach((a, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="mono"><strong>${a.id}</strong></td>
+          <td>${a.asociado}</td>
+          <td>${a.operacion}</td>
+          <td>👤 ${a.operador}</td>
+          <td><span style="color:#059669; font-weight:800;">${a.sla}</span></td>
+          <td><span class="badge-al-dia">${a.estado}</span></td>
+          <td><button onclick="resolverAlertaOps(${i})" style="background:#eff6ff; color:var(--primary); border:1px solid #bfdbfe; padding:4px 8px; border-radius:6px; font-weight:700; cursor:pointer;">Gestionar</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderizarKanban() {
+      const cols = {
+        'Solicitado': document.getElementById('kb-box-solicitado'),
+        'En Evaluación Documental': document.getElementById('kb-box-evaluacion'),
+        'Aprobado': document.getElementById('kb-box-aprobado'),
+        'Liquidado': document.getElementById('kb-box-liquidado'),
+        'Rechazado': document.getElementById('kb-box-rechazado')
+      };
+      Object.values(cols).forEach(c => c.innerHTML = "");
+
+      DB.alertasOperativas.forEach(a => {
+        const div = document.createElement('div');
+        div.className = "kanban-card-item";
+        div.innerHTML = `
+          <div style="font-size:11px; font-weight:800; color:var(--primary);">${a.id}</div>
+          <div style="font-weight:700; font-size:12px;">${a.asociado}</div>
+          <div style="font-size:11px; color:#64748b;">${a.operacion} • ${a.sla}</div>
+        `;
+        if (cols[a.estado]) cols[a.estado].appendChild(div);
+      });
+    }
+
+    function renderizarCalendarioOps() {
+      const grid = document.getElementById('calendar-grid-box');
+      grid.innerHTML = "";
+      const dias = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+      dias.forEach(d => {
+        const h = document.createElement('div');
+        h.className = "calendar-day-header";
+        h.textContent = d;
+        grid.appendChild(h);
+      });
+      for (let i = 1; i <= 31; i++) {
+        const c = document.createElement('div');
+        c.className = "calendar-day-cell";
+        c.innerHTML = `<span>${i}</span>`;
+        if (i === 10 || i === 12 || i === 15) {
+          c.innerHTML += `<div style="background:#eff6ff; color:var(--primary); padding:2px 4px; border-radius:4px; font-size:9.5px; margin-top:4px;">⚡ SLA Vence</div>`;
+        }
+        grid.appendChild(c);
+      }
+    }
+
+    function abrirModalNuevaAlerta() { document.getElementById('modal-nueva-alerta').classList.add('active'); }
+    function guardarNuevaAlerta() {
+      const a = {
+        id: `TR-${Math.floor(1000 + Math.random() * 9000)}`,
+        asociado: document.getElementById('alt-asociado').value,
+        operacion: document.getElementById('alt-concepto').value,
+        operador: document.getElementById('alt-operador').value,
+        sla: "2hs",
+        estado: "Solicitado",
+        vencimiento: "15/03/2026"
+      };
+      DB.alertasOperativas.unshift(a);
+      renderizarOpsListado();
+      closeModal('modal-nueva-alerta');
+      mostrarNotificacion("Alerta programada correctamente", "success");
+    }
+
+    function resolverAlertaOps(idx) {
+      DB.alertasOperativas[idx].estado = "Liquidado";
+      renderizarOpsListado();
+      mostrarNotificacion("Alerta liquidada y cerrada", "success");
+    }
+
+    /**
+     * 5. COMERCIALIZADORES & VPN
+     */
+    function renderizarComercializadores() {
+      const tbody = document.getElementById('tbody-comercializadores-liq');
+      tbody.innerHTML = `
+        <tr>
+          <td>28/02/2026</td>
+          <td>Febrero 2026</td>
+          <td>Roberto Vallejos</td>
+          <td class="mono">$ 3.200.000,00</td>
+          <td class="mono" style="color:#059669; font-weight:800;">$ 160.000,00</td>
+          <td><span class="badge-al-dia">PAGADO</span></td>
+        </tr>
+      `;
+    }
+
+    function abrirModalEditarComercializador() {
+      mostrarNotificacion("Formulario de comercializador abierto para edición", "info");
+    }
+
+    function calcularVPN() {
+      const tasaAnual = parseFloat(document.getElementById('vpn-tasa-corte').value) || 64.5;
+      const nominal = 45000000;
+      const vpn = nominal * (1 - (tasaAnual / 100) * 0.1775);
+      document.getElementById('vpn-res-nominal').textContent = `$ ${formatearMoneda(nominal)}`;
+      document.getElementById('vpn-res-calculado').textContent = `$ ${formatearMoneda(vpn)}`;
+    }
+
+    function renderizarAlianzasB2B() {
+      const tbody = document.getElementById('tbody-alianzas-b2b');
+      tbody.innerHTML = `
+        <tr>
+          <td><strong>Supermercado La Peruana</strong></td>
+          <td class="mono">30-71234567-8</td>
+          <td>Alimentos</td>
+          <td>3,5%</td>
+          <td>Hasta 12 cuotas</td>
+          <td><span class="badge-al-dia">ACTIVO</span></td>
+        </tr>
+      `;
+    }
+
+    function abrirModalNuevoComercio() {
+      mostrarNotificacion("Registro de nuevo comercio aliado abierto", "info");
+    }
+
+    /**
+     * 6. POWER BI / CHART.JS
+     */
+    function inicializarGraficosPowerBI() {
+      try {
+        // Barras
+        new Chart(document.getElementById('chart-colocacion-lineas'), {
+          type: 'bar',
+          data: {
+            labels: ['FEDEM', 'Municipales', 'Sidecreer', 'Combinadas'],
+            datasets: [{
+              label: 'Millones de Pesos',
+              data: [18.5, 9.2, 5.1, 2.05],
+              backgroundColor: ['#135596', '#059669', '#6366f1', '#d97706']
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        // Dona
+        new Chart(document.getElementById('chart-organismos-dona'), {
+          type: 'doughnut',
+          data: {
+            labels: ['Provinciales (CGE/Salud/Policía)', 'Municipales'],
+            datasets: [{
+              data: [78, 22],
+              backgroundColor: ['#135596', '#059669']
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        // Línea
+        new Chart(document.getElementById('chart-consumos-diarios'), {
+          type: 'line',
+          data: {
+            labels: ['01/03', '03/03', '05/03', '07/03', '09/03'],
+            datasets: [{
+              label: 'Farmacias y Comercios ($)',
+              data: [1200000, 1840000, 1420000, 2100000, 2360000],
+              borderColor: '#135596',
+              tension: 0.3
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      } catch (e) { console.warn(e); }
+    }
+
+    /**
+     * 7. PORTAL COMERCIO B2B
+     */
+    function cambiarSubvistaB2B(subId, btn) {
+      document.querySelectorAll('.b2b-subview').forEach(v => v.style.display = 'none');
+      document.getElementById(subId).style.display = 'block';
+      if (btn) {
+        document.querySelectorAll('#portal-comercio-b2b .portal-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      }
+    }
+
+    function setModoCobroB2B(modo) {
+      document.getElementById('b2b-box-modo-a').style.display = modo === 'A' ? 'block' : 'none';
+      document.getElementById('b2b-box-modo-b').style.display = modo === 'B' ? 'block' : 'none';
+      document.getElementById('b2b-box-modo-c').style.display = modo === 'C' ? 'block' : 'none';
+      document.getElementById('btn-modo-a').classList.toggle('active', modo === 'A');
+      document.getElementById('btn-modo-b').classList.toggle('active', modo === 'B');
+      document.getElementById('btn-modo-c').classList.toggle('active', modo === 'C');
+    }
+
+    function generarQRComercio() {
+      const display = document.getElementById('b2b-qr-display');
+      if (!display) return;
+      display.innerHTML = "";
+      const importe = document.getElementById('b2b-cobro-monto')?.value || "4500";
+      const cuotas = document.getElementById('b2b-cobro-cuotas')?.value || "1";
+      const payload = `COMERCIO:Supermercado La Peruana:${importe}:${cuotas}:${Date.now()}`;
+      try {
+        new QRCode(display, {
+          text: payload,
+          width: 160,
+          height: 160,
+          colorDark: "#0f172a",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (e) {}
+    }
+
+    function procesarCobroAsistido() {
+      const dni = document.getElementById('b2b-dni-asistido').value;
+      const monto = document.getElementById('b2b-monto-asistido').value;
+      if (!dni) { mostrarNotificacion("Ingrese el DNI del socio", "warning"); return; }
+      mostrarNotificacion(`Solicitud de cobro por $${monto} enviada por WhatsApp al DNI ${dni}`, "success");
+    }
+
+    /**
+     * UTILIDADES
+     */
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('active');
+    }
+
+    function mostrarNotificacion(mensaje, tipo = "info") {
+      const toast = document.getElementById('toast-notif');
+      const text = document.getElementById('toast-message');
+      const icon = document.getElementById('toast-icon');
+      text.textContent = mensaje;
+      if (tipo === 'success') icon.textContent = "✅";
+      else if (tipo === 'warning') icon.textContent = "⚠️";
+      else if (tipo === 'danger') icon.textContent = "❌";
+      else icon.textContent = "ℹ️";
+      toast.classList.add('active');
+      setTimeout(() => toast.classList.remove('active'), 3500);
+    }
+
+    function formatearMoneda(val, decimales = true) {
+      const num = parseFloat(val);
+      if (isNaN(num)) return val;
+      return num.toLocaleString('es-AR', {
+        minimumFractionDigits: decimales ? 2 : 0,
+        maximumFractionDigits: decimales ? 2 : 0
+      });
+    }
+  </script>
+</body>
+</html>

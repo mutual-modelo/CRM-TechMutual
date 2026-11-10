@@ -1,0 +1,190 @@
+<script>
+/**
+ * ============================================================================
+ * SISTEMA: CRM & BACKOFFICE FINANCIERO — ASOCIACIÓN MUTUAL MODELO DE ENTRE RÍOS
+ * MÓDULO 4: LÓGICA FRONTEND JAVASCRIPT REACTIVA (ES6+)
+ * ARCHIVO: Scripts.html
+ * ============================================================================
+ */
+
+const estadoCRM = {
+  operadorActivo: 'Julian',
+  vistaSimuladorActual: 'COMERCIAL', // 'COMERCIAL' | 'ADMINISTRATIVA'
+  socioSeleccionado: null,
+  padronSocios: [],
+  ayudasEconomicas: [],
+  seguimientosAlertas: [],
+  comercializadores: [],
+  liquidacionesComisiones: [],
+  cesionesCarteras: [],
+  catalogoCodigosDescuento: [],
+  tasasOficiales: null,
+  configIA: null,
+  carteraFiltradaSeleccionada: new Set(),
+  reciboAnalizadoActual: null
+};
+
+window.onload = function() {
+  inicializarCRM_UI();
+};
+
+function inicializarCRM_UI() {
+  ejecutarBackendAsync('obtenerDatosInicialesCRM')
+    .then(function(res) {
+      if (res.ok) {
+        estadoCRM.padronSocios = res.padronSocios || [];
+        estadoCRM.ayudasEconomicas = res.ayudasEconomicas || [];
+        estadoCRM.seguimientosAlertas = res.seguimientosAlertas || [];
+        estadoCRM.comercializadores = res.comercializadores || [];
+        estadoCRM.liquidacionesComisiones = res.liquidacionesComisiones || [];
+        estadoCRM.cesionesCarteras = res.cesionesCarteras || [];
+        estadoCRM.catalogoCodigosDescuento = res.catalogoCodigosDescuento || [];
+        estadoCRM.tasasOficiales = res.tasasOficiales;
+        estadoCRM.configIA = res.configIA;
+        estadoCRM.operadorActivo = res.operadorActivo || 'Julian';
+
+        document.getElementById('sel-operador-activo').value = estadoCRM.operadorActivo;
+        
+        renderizarPadronSociosUI();
+        renderizarAyudasKanbanUI();
+        renderizarAlertasUI();
+        renderizarComercializadoresUI();
+        ejecutarSimulacionEnVivoUI();
+        mostrarNotificacionToast('Sistema CRM inicializado con éxito', 'success');
+      }
+    })
+    .catch(function(err) {
+      mostrarNotificacionToast('Error cargando datos del servidor: ' + err, 'danger');
+    });
+}
+
+function ejecutarBackendAsync(nombreFuncion, ...args) {
+  return new Promise(function(resolve, reject) {
+    const loader = document.getElementById('loader-overlay');
+    if (loader) loader.style.display = 'flex';
+    
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (loader) loader.style.display = 'none';
+          resolve(res);
+        })
+        .withFailureHandler(function(err) {
+          if (loader) loader.style.display = 'none';
+          reject(err);
+        })[nombreFuncion](...args);
+    } else {
+      if (loader) loader.style.display = 'none';
+      resolve({ ok: true, mensaje: 'Modo sin servidor Apps Script' });
+    }
+  });
+}
+
+function mostrarNotificacionToast(msg, tipo = 'info') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  const div = document.createElement('div');
+  div.className = 'toast ' + tipo;
+  div.innerText = msg;
+  container.appendChild(div);
+  setTimeout(() => div.remove(), 4000);
+}
+
+function cambiarPantallaCRM(idPantalla, btnElement) {
+  document.querySelectorAll('.app-screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn, .menu-item').forEach(b => b.classList.remove('active'));
+  
+  const screen = document.getElementById(idPantalla);
+  if (screen) screen.classList.add('active');
+  if (btnElement) btnElement.classList.add('active');
+}
+
+function activarVistaSimulador(modo) {
+  const wrap = document.getElementById('contenedor-simuladores');
+  const btnCom = document.getElementById('btn-vista-comercial');
+  const btnAdm = document.getElementById('btn-vista-administrativa');
+  
+  if (modo === 'COMERCIAL') {
+    wrap.classList.add('vista-comercial-activa');
+    wrap.classList.remove('vista-admin-activa');
+    btnCom.classList.add('active');
+    btnAdm.classList.remove('active');
+  } else {
+    wrap.classList.add('vista-admin-activa');
+    wrap.classList.remove('vista-comercial-activa');
+    btnAdm.classList.add('active');
+    btnCom.classList.remove('active');
+  }
+}
+
+function ejecutarSimulacionEnVivoUI() {
+  const modo = document.getElementById('sel-modo-calculo-sim').value;
+  const valor = Number(document.getElementById('inp-sim-valor-principal').value) || 1000000;
+  
+  // 1. FEDEM
+  const matrizFEDEM = {
+    6: { coef: 1.57, gastos: 0.25, seguro: 0.005, tna: 0.4894 },
+    12: { coef: 1.832, gastos: 0.25, seguro: 0.005, tna: 0.5368 },
+    18: { coef: 2.242364, gastos: 0.34, seguro: 0.005, tna: 0.4466 },
+    24: { coef: 2.677818, gastos: 0.34, seguro: 0.005, tna: 0.5339 },
+    36: { coef: 3.620727, gastos: 0.34, seguro: 0.005, tna: 0.6145 },
+    48: { coef: 4.635637, gastos: 0.34, seguro: 0.005, tna: 0.6485 }
+  };
+  
+  let htmlFEDEM = '';
+  [6, 12, 18, 24, 36, 48].forEach(n => {
+    const c = matrizFEDEM[n];
+    let neto = modo === 'CUOTA' ? (valor * n) / c.coef : valor;
+    let total = neto * c.coef;
+    let cuota = total / n;
+    let capBruto = neto / (1 - c.gastos);
+    let gastos = capBruto * c.gastos;
+    let seguro = capBruto * c.seguro * n;
+    let intereses = total - capBruto - seguro;
+
+    htmlFEDEM += '<tr>' +
+      '<td><strong>' + n + ' cuotas</strong></td>' +
+      '<td class="mono font-bold text-emerald">$ ' + Math.round(cuota).toLocaleString('es-AR') + '</td>' +
+      '<td class="mono">$ ' + Math.round(neto).toLocaleString('es-AR') + '</td>' +
+      '<td class="mono text-purple">$ ' + Math.round(total).toLocaleString('es-AR') + '</td>' +
+      '<td class="mono solo-vista-admin">$ ' + Math.round(capBruto).toLocaleString('es-AR') + '</td>' +
+      '<td class="mono solo-vista-admin">$ ' + Math.round(gastos).toLocaleString('es-AR') + '</td>' +
+      '<td class="mono solo-vista-admin">$ ' + Math.round(seguro).toLocaleString('es-AR') + '</td>' +
+      '<td class="mono solo-vista-admin">$ ' + Math.round(intereses).toLocaleString('es-AR') + '</td>' +
+      '<td class="mono solo-vista-admin">' + (c.tna * 100).toFixed(1) + '%</td>' +
+      '<td class="mono solo-vista-admin">--</td>' +
+      '<td class="mono solo-vista-admin">--</td>' +
+      '<td><button type="button" class="btn-quick primary" onclick="seleccionarPlanParaAyuda(' + n + ', ' + Math.round(cuota) + ', \\'FEDEM Provincial\\')">Elegir</button></td>' +
+    '</tr>';
+  });
+  document.getElementById('tbody-sim-fedem').innerHTML = htmlFEDEM;
+  
+  actualizarPlantillaWhatsAppUI();
+}
+
+function actualizarPlantillaWhatsAppUI() {
+  const nombre = document.getElementById('inp-sim-nombre-cliente').value || 'Estimado/a socio/a';
+  const valor = Number(document.getElementById('inp-sim-valor-principal').value) || 1000000;
+  
+  const texto = nombre + " le acercamos los planes aprobados de Mutual Modelo 🙌🏻\\n\\n" +
+    "📢 TENEMOS LA TASA MÁS BAJA DE ENTRE RÍOS\\n" +
+    "💰 $ " + valor.toLocaleString('es-AR') + " en 12 cuotas de $ " + Math.round(valor * 0.152667).toLocaleString('es-AR') + "\\n" +
+    "💰 $ " + valor.toLocaleString('es-AR') + " en 24 cuotas de $ " + Math.round(valor * 0.111576).toLocaleString('es-AR') + "\\n\\n" +
+    "Requisitos: DNI, Recibo de Sueldo y CBU. Descuento directo por recibo.\\n" +
+    "Ante cualquier duda quedo a disposición. Atte. " + estadoCRM.operadorActivo + " - Mutual Modelo.";
+    
+  document.getElementById('txt-plantilla-whatsapp').value = texto;
+}
+
+function copiarPlantillaWhatsAppUI() {
+  const t = document.getElementById('txt-plantilla-whatsapp').value;
+  navigator.clipboard.writeText(t);
+  mostrarNotificacionToast('Plantilla copiada al portapapeles', 'success');
+}
+
+function enviarWhatsAppClienteUI() {
+  const t = document.getElementById('txt-plantilla-whatsapp').value;
+  const tel = document.getElementById('inp-tel-whatsapp-sim').value.replace(/[^0-9]/g, '');
+  window.open('https://api.whatsapp.com/send?phone=' + tel + '&text=' + encodeURIComponent(t), '_blank');
+}
+</script>

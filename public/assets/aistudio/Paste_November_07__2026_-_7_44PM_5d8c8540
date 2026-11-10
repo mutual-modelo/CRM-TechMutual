@@ -1,0 +1,577 @@
+📋 PROMPT — FASE 1: Arquitectura de Base de Datos (Sheets), Legajos en Drive y Backend ABM (01_Core_DB_Drive_ABM.gs) 
+
+<role>
+Actúa como Arquitecto Senior de Google Workspace y Desarrollador Backend Experto en Google Apps Script (V8).
+Tu objetivo es programar el **Módulo 1 de 4 (`01_Core_DB_Drive_ABM.gs`)** del sistema **"CRM & Backoffice Financiero — Asociación Mutual Modelo de Entre Ríos"**.
+</role>
+
+<strict_rules>
+1. CERO PLACEHOLDERS: Prohibido usar `// TODO`, `// implementar luego`, `// ... resto de columnas` o funciones incompletas. Escribe el 100% del código funcional listo para producción en Google Apps Script V8.
+2. TOLERANCIA A FALLOS Y CONCURRENCIA:
+   - Usa `LockService.getScriptLock()` (`waitLock(15000)`) en todas las operaciones de escritura (`guardar*`, `actualizar*`, `subir*`) para evitar colisiones entre operadores simultáneos[cite: 2].
+   - Todas las fechas leídas desde Sheets (`instanceof Date`) deben serializarse a `String` (`yyyy-MM-dd` o `yyyy-MM-dd HH:mm:ss`) antes de retornar por `google.script.run` (evita el bug de retorno `null` de Apps Script)[cite: 2].
+3. ALCANCE LIMPIO: Excluye billeteras QR, POS de comercios, fidelidad/sellos o eventos. Enfócate exclusivamente en el CRM Financiero, Padrón 360°, Legajos en Google Drive, Ayudas Económicas (con Refinanciación) y Seguimientos/Alertas.
+4. ARQUITECTURA MULTIPARTE HTML: Incluye la función `include(filename)` usando `HtmlService.createHtmlOutputFromFile(filename).getContent()` y el enrutador base `cargarHtmlCRM()` que evalúa `Index.html` con `createTemplateFromFile('Index')`[cite: 2].
+</strict_rules>
+
+<global_constants>
+Define al inicio del archivo:
+- `SPREADSHEET_ID = ''` (con fallback automático en `getSpreadsheet()` a `SpreadsheetApp.getActiveSpreadsheet()`, o `PropertiesService.getScriptProperties().getProperty('AMMER_CRM_SS_ID')`, o creación automática si no existe)[cite: 2].
+- `OPERADORES_MUTUAL = ['Julian', 'Melina', 'Lucrecia', 'Andrea', 'Valentina', 'Nicolas']`[cite: 2].
+- `LOGO_MUTUAL_BASE64`: Logotipo vectorial SVG en Base64 de "Asociación Mutual Modelo de Entre Ríos"[cite: 2].
+- Diccionario constante `HOJAS`:
+  - `PADRON: 'Socios_Padron'`
+  - `AYUDAS: 'Ayudas_Economicas'`
+  - `SEGUIMIENTOS: 'Seguimientos_Y_Alertas'`
+  - `COMERCIALIZADORES: 'Comercializadores'`
+  - `LIQUIDACIONES: 'Liquidaciones_Comisiones'`
+  - `CESIONES: 'Cesiones_Carteras'`
+  - `RECIBOS_CODIGOS: 'Recibos_Y_Codigos'`
+  - `LOGS_IA: 'Logs_Integraciones_IA'`
+</global_constants>
+
+<database_schema>
+Implementa `asegurarEstructuraBD(forzarReinicio)` y `setupDatabase()` para crear/validar las 8 hojas con formato de cabecera corporativo (`#135596`, texto blanco en negrita, fila 1 inmovilizada) y poblar datos semilla realistas si están vacías[cite: 2]:
+
+1. `Socios_Padron` (43 columnas exactas):
+   `['DNI', 'Nro_Socio', 'Apellido_Nombre', 'Fecha_Nacimiento', 'Edad', 'Sexo', 'Domicilio', 'Localidad', 'Telefono_WhatsApp', 'Email', 'CBU_Alias', 'Banco', 'Organismo', 'Sector_Trabajo', 'Dependencia_Funcion', 'Condicion_Laboral', 'Legajo_Sueldo', 'Sueldo_Bruto', 'Afectaciones_Ley', 'Afectaciones_Particulares', 'Sueldo_Neto', 'Margen_Cuota_Disponible', 'Monto_Preaprobado', 'Estado_Cuota_Social', 'Deuda_Cuota_Social', 'En_Tramite_Jubilacion', 'Detalle_Jubilacion', 'Bloqueado_Legales', 'Detalle_Legales', 'Pagos_Duplicados', 'Detalle_Pagos_Duplicados', 'Alivio_Financiero', 'Mutuales_Alivio', 'Certificacion_Deuda', 'Detalle_Certificacion', 'Subsidios_JSON', 'Grupo_Familiar_JSON', 'Carpeta_Drive_ID', 'Carpeta_Drive_URL', 'Originacion', 'Fecha_Alta', 'Ultima_Actualizacion', 'Operador']`
+
+2. `Ayudas_Economicas` (42 columnas exactas):
+   `['ID_Ayuda', 'Nro_Mutuo', 'Fecha_Solicitud', 'Fecha_Liquidacion', 'Periodo_Mes', 'DNI', 'Apellido_Nombre', 'Linea_Ayuda', 'Organismo', 'Originacion', 'ID_Comercializador', 'Nombre_Comercializador', 'Monto_Solicitado', 'Monto_Depositado', 'Es_Refinanciacion', 'IDs_Ayudas_Canceladas', 'Deudas_Manuales_JSON', 'Monto_Retenido_Refi', 'Neto_Efectivo_Entregado', 'Capital_Bruto', 'Gastos_Admin', 'Seguro_Total', 'Intereses_Financieros', 'Total_A_Devolver', 'Cantidad_Cuotas', 'Valor_Cuota', 'Cuotas_Pagadas', 'Cuotas_Restantes', 'Saldo_Capital_Restante', 'Saldo_Total_Restante', 'Estado_Tramite', 'Estado_Cobranza', 'Estado_Documentacion', 'Checklist_Doc_JSON', 'Carpeta_Legajo_URL', 'Archivos_Adjuntos_JSON', 'Plan_Cuotas_JSON', 'Cartera_Titular', 'ID_Lote_Cesion', 'Fecha_Cesion', 'Observaciones', 'Operador']`
+
+3. `Seguimientos_Y_Alertas` (16 columnas exactas):
+   `['ID_Seguimiento', 'Fecha_Hora', 'DNI', 'Apellido_Nombre', 'ID_Ayuda_Relacionada', 'Tipo_Registro', 'Categoria', 'Subtipo_Tramite', 'Prioridad', 'Fecha_Vencimiento_Alerta', 'Estado_Alerta', 'Detalle_Gestion', 'Resultado_Proximo_Paso', 'Operador_Asignado', 'Operador_Creador', 'Notificado_WhatsApp']`
+
+4. `Comercializadores` (11 columnas exactas):
+   `['ID_Comercializador', 'Nombre_Estudio_Agente', 'DNI_CUIT', 'Telefono', 'Email', 'CBU_Pago', 'Base_Calculo_Comision', 'Porcentaje_Comision', 'Estado', 'Fecha_Alta', 'Observaciones']`
+
+5. `Liquidaciones_Comisiones` (20 columnas exactas):
+   `['ID_Liquidacion', 'Fecha_Emision', 'Periodo_Desde', 'Periodo_Hasta', 'ID_Comercializador', 'Nombre_Comercializador', 'Cantidad_Ayudas', 'Total_Monto_Solicitado', 'Total_Monto_Depositado', 'Total_Neto_Efectivo', 'Base_Aplicada', 'Porcentaje_Comision', 'Monto_Comision_Bruta', 'Deducciones_Ajustes', 'Neto_A_Pagar_Comision', 'Estado_Pago', 'Fecha_Pago', 'Comprobante_Pago_URL', 'IDs_Ayudas_Incluidas_JSON', 'Operador']`
+
+6. `Cesiones_Carteras` (17 columnas exactas):
+   `['ID_Lote_Cesion', 'Fecha_Cesion', 'Cesionario_Entidad_Destino', 'CUIT_Cesionario', 'Lineas_Incluidas', 'Cantidad_Creditos_Cedidos', 'Total_Monto_Original', 'Total_Cuotas_Restantes', 'Saldo_Nominal_Cedido', 'Tasa_Descuento_Aplicada_Pct', 'Precio_Venta_Cartera', 'Modalidad_Cobranza', 'Estado_Cesion', 'IDs_Ayudas_Cedidas_JSON', 'Contrato_Drive_URL', 'Observaciones', 'Operador']`
+
+7. `Recibos_Y_Codigos` (16 columnas exactas):
+   `['ID_Registro', 'Tipo_Fila', 'Codigo_Concepto', 'Nombre_Concepto', 'Organismo_Ambito', 'Clasificacion_Recibo', 'DNI_Analizado', 'Fecha_Analisis', 'Haberes_Computables', 'Descuentos_Ley', 'Descuentos_Particulares', 'Regla_Afectacion', 'Pct_Tope', 'Margen_Disponible_Calculado', 'Detalle_Items_JSON', 'Operador']`
+
+8. `Logs_Integraciones_IA` (10 columnas exactas):
+   `['ID_Log', 'Fecha_Hora', 'Canal_Agente', 'Evento_Accion', 'DNI_Relacionado', 'ID_Referencia', 'Payload_Entrada_JSON', 'Respuesta_Salida_JSON', 'Estado_Ejecucion', 'Latencia_Ms']`
+</database_schema>
+
+<drive_engine_spec>
+Implementa el motor documental en Google Drive con las siguientes funciones exactas:
+1. `obtenerOCrearCarpetaRaizLegajos()`: Busca o crea en Drive la carpeta raíz `"CRM_Mutual_Modelo_Legajos"` y guarda su ID en `ScriptProperties`.
+2. `asegurarCarpetaLegajoSocioBackend(dni, apellidoNombre)`:
+   - Busca o crea dentro de la carpeta raíz una subcarpeta llamada `"Legajo_" + dni + "_" + apellidoNombre`.
+   - Actualiza las columnas `Carpeta_Drive_ID` y `Carpeta_Drive_URL` del socio en `Socios_Padron`.
+   - Retorna `{ ok: true, folderId, folderUrl }`.
+3. `asegurarSubcarpetaAyudaDrive(dni, apellidoNombre, idAyuda, lineaAyuda)`:
+   - Dentro de la carpeta del socio, busca o crea la subcarpeta `"Ayuda_" + idAyuda + "_" + lineaAyuda`.
+   - Retorna `{ folderId, folderUrl }`.
+4. `subirDocumentoLegajoBackend(payload)`:
+   - Recibe `{ dni, apellidoNombre, idAyuda, tipoDocumento, nombreArchivo, mimeType, base64Data, operador }`.
+   - Decodifica `base64Data` (removiendo el prefijo `data:...;base64,` si existe) usando `Utilities.base64Decode()`, crea el `Blob` y guarda el archivo en la carpeta del socio o en la subcarpeta de la ayuda económica si `idAyuda` está presente.
+   - Si corresponde a una `idAyuda`, actualiza en `Ayudas_Economicas`:
+     - `Archivos_Adjuntos_JSON` agregando `{ idArchivo, nombre, tipoDocumento, url, fechaHora, operador }`.
+     - `Checklist_Doc_JSON` marcando el ítem (`DNI`, `RECIBO`, `CBU`, `MUTUO`, `PAGARE`, `LIBRE_DEUDA`) como `presentado: true`.
+     - Recalcula automáticamente `Estado_Documentacion` (`Incompleto`, `En Revisión`, `Legajo Completo`).
+   - Retorna el estado actualizado de la ficha/ayuda.
+</drive_engine_spec>
+
+<abm_functions_spec>
+Implementa las funciones CRUD de servidor con estos nombres exactos:
+1. `onOpen()` y `abrirCRM()`: Menú `"🛡️ CRM Mutual Modelo"` en Sheets para abrir el modal de `1440x880`, sincronizar hojas o reiniciar datos de prueba[cite: 2].
+2. `guardarOperadorActivoBackend(nombreOperador)`: Guarda en `UserProperties` el operador en sesión[cite: 2].
+3. `obtenerFichaSocio360Backend(dni)`: Retorna `{ ok: true, socio, ayudas, seguimientos, recibosAnalizados, resumenDeuda }`.
+4. `guardarAsociadoBackend(datosSocio)`:
+   - Inserta o actualiza por `DNI` en `Socios_Padron` mapeando los 43 campos (calcula `Edad` desde `Fecha_Nacimiento`, `Sueldo_Neto = Sueldo_Bruto - Afectaciones_Ley - Afectaciones_Particulares`, preserva `Carpeta_Drive_ID/URL` si ya existía, o la crea si se solicita).
+   - Retorna el bootstrap actualizado del CRM.
+5. `generarPlanCuotasJSON(capitalBruto, totalADevolver, cantidadCuotas, valorCuota, fechaBaseStr)`:
+   - Genera el array JSON de las `N` cuotas con `{ numeroCuota, fechaVencimiento, cuotaTotal, amortizacionCapital, interesYGastos, saldoCapitalRestante, estado: 'Pendiente' }`.
+6. `guardarAyudaEconomicaBackend(datosAyuda)`:
+   - Crea o edita una ayuda en `Ayudas_Economicas`.
+   - Si `Es_Refinanciacion === 'SI'` y el estado pasa a `'Liquidado'` (o al crearse como liquidada):
+     - Recorre los `IDs_Ayudas_Canceladas` en `Ayudas_Economicas`, cambia su `Estado_Tramite` a `'Cancelado por Refinanciación'`, pone `Saldo_Capital_Restante = 0`, `Saldo_Total_Restante = 0`, `Cuotas_Restantes = 0` y agrega en `Observaciones`: `"[Cancelado por refinanciación en " + idAyudaNueva + " el " + fechaHoy + "]"`[cite: 2].
+   - Calcula `Cuotas_Restantes = Cantidad_Cuotas - Cuotas_Pagadas` y `Saldo_Total_Restante = Cuotas_Restantes * Valor_Cuota`.
+   - Si no tiene `Fecha_Liquidacion` y `Estado_Tramite === 'Liquidado'`, asigna la fecha actual.
+7. `actualizarEstadoAyudaBackend(idAyuda, nuevoEstadoTramite, estadoCobranza, cuotasPagadas, observaciones, operador)`:
+   - Actualiza estado de trámite, cobranza, recalcula cuotas restantes y saldos, y si pasa a `'Liquidado'` ejecuta la cancelación automática de préstamos refinanciados asociados.
+8. `guardarSeguimientoAlertaBackend(datosSeguimiento)` y `actualizarEstadoAlertaBackend(idSeguimiento, nuevoEstado, resultado, operador)`:
+   - Registra y actualiza seguimientos administrativos y alertas de trámites en `Seguimientos_Y_Alertas`, calculando dinámicamente al leer si la alerta está `'Vencida'`, `'Vence Hoy'`, `'Próxima'` o `'Resuelta'`.
+9. `leerHojaComoObjetos(sheet)` y `escribirObjetoEnHojaPorClave(sheet, headers, claveColumna, valorClave, objetoDatos)`:
+   - Funciones utilitarias universales optimizadas en lectura/escritura por lotes (`getValues` / `setValues`) basadas en nombres de cabeceras (evitando índices mágicos rígidos que fallan si se mueve una columna)[cite: 2].
+</abm_functions_spec>
+
+<output_format>
+Entrega únicamente el bloque de código completo de `01_Core_DB_Drive_ABM.gs` perfectamente comentado y estructurado, sin omitir ninguna función ni línea de código.
+</output_format>
+
+
+Configuración recomendada para ejecutar este Prompt (Fase 1):
+Modelo: 3.1 Pro (óptimo para arquitectura backend estructurada en Apps Script) o 4 Argon.
+Nivel de pensamiento: Alto (Muy minucioso).
+Entrega de código recomendada: Modular en partes (estamos en el Módulo 1 de 4: 01_Core_DB_Drive_ABM.gs, lo que garantiza que el modelo entregue el 100% de las ~650 líneas de este archivo sin ningún recorte).
+📋 PROMPT — FASE 2: Backend Financiero, Liquidaciones, Comisiones, Carteras y Gateway IA (02_Finanzas_Liquidaciones_Carteras_IA.gs) 
+
+<role>
+Actúa como Arquitecto Senior de Sistemas Financieros en Google Workspace y Desarrollador Backend Experto en Google Apps Script (V8).
+Tu objetivo es programar el **Módulo 2 de 4 (`02_Finanzas_Liquidaciones_Carteras_IA.gs`)** del sistema **"CRM & Backoffice Financiero — Asociación Mutual Modelo de Entre Ríos"**[cite: 2].
+Este archivo complementa a `01_Core_DB_Drive_ABM.gs` y comparte sus constantes globales (`HOJAS`, `OPERADORES_MUTUAL`, `LOGO_MUTUAL_BASE64`, `getSpreadsheet()`, `asegurarEstructuraBD()`, `leerHojaComoObjetos()`, `escribirObjetoEnHojaPorClave()` y `cargarHtmlCRM()`)[cite: 2].
+</role>
+
+<strict_rules>
+1. CERO PLACEHOLDERS O CÓDIGO TRUNCADO: Está prohibido usar `// TODO`, `// implementar aquí`, `// ...` o funciones resumidas. Escribe el 100% de las funciones completas y operativas.
+2. PRECISIÓN MATEMÁTICA FINANCIERA: Respeta al decimal todas las tasas, gastos, seguros, factores y fórmulas de los 3 simuladores oficiales especificadas en `<simulators_engine_spec>`.
+3. INTEGRIDAD TRANSACCIONAL: Usa `LockService.getScriptLock()` (`waitLock(15000)`) en las funciones que emiten liquidaciones de comisiones, ejecutan cesiones de cartera o guardan análisis de recibos y configuraciones de IA[cite: 2].
+4. SERIALIZACIÓN SEGURA: Ningún objeto retornado a `google.script.run` puede contener objetos `Date` crudos; formatea siempre como texto ISO (`yyyy-MM-dd` o `yyyy-MM-dd HH:mm:ss`)[cite: 2].
+</strict_rules>
+
+<bootstrap_and_http_router_spec>
+Implementa el cargador inicial unificado del CRM y el enrutador HTTP para WebApp y Webhooks externos:
+1. `obtenerDatosInicialesCRM()`:
+   - Invoca `asegurarEstructuraBD(false)` y lee con `leerHojaComoObjetos()` las 8 hojas del sistema (`Socios_Padron`, `Ayudas_Economicas`, `Seguimientos_Y_Alertas`, `Comercializadores`, `Liquidaciones_Comisiones`, `Cesiones_Carteras`, `Recibos_Y_Codigos`, `Logs_Integraciones_IA`)[cite: 2].
+   - Separa `Recibos_Y_Codigos` en `catalogoCodigosDescuento` (`Tipo_Fila === 'CODIGO_MAESTRO'`) e `historialRecibosAnalizados` (`Tipo_Fila === 'ANALISIS_RECIBO'`).
+   - Enriquecer en memoria cada registro de `Seguimientos_Y_Alertas` con `estadoTemporalAlerta` (`'VENCIDA'`, `'VENCE_HOY'`, `'PROXIMA'`, `'RESUELTA'`) comparando `Fecha_Vencimiento_Alerta` contra la fecha actual.
+   - Calcula `kpisDashboard` globales (total socios activos, socios con alertas legales/jubilación, ayudas en evaluación, total colocado en el mes actual, alertas vencidas y cartera propia vs. cedida)[cite: 2].
+   - Retorna todo el paquete estructurado `{ ok: true, logoBase64, operadorActivo, operadoresLista, urlWebApp, tasasOficiales: obtenerMatrizTasasOficiales(), configIA: obtenerConfiguracionIABackend(), padronSocios, ayudasEconomicas, seguimientosAlertas, comercializadores, liquidacionesComisiones, cesionesCarteras, catalogoCodigosDescuento, historialRecibosAnalizados, logsIA, kpisDashboard }`[cite: 2].
+2. `doGet(e)` y `doPost(e)`:
+   - Si `e.parameter.action` está presente en `doGet` o llega un payload JSON en `doPost`, redirige a `procesarWebhookAgenteIA(e)`[cite: 2].
+   - Si no hay `action` en `doGet`, retorna `cargarHtmlCRM()`[cite: 2].
+</bootstrap_and_http_router_spec>
+
+<simulators_engine_spec>
+Implementa `obtenerMatrizTasasOficiales()` y `simularPlanesMultilineaBackend(params)` con las 3 líneas oficiales exactas y sus 2 modos de cálculo (`MODO_NETO` = a partir del Neto a Entregar / Monto Final, y `MODO_CUOTA` = a partir de la Cuota Mensual Objetivo / Margen Disponible), devolviendo tanto la estructura de **Vista Comercial** como la de **Vista Administrativa** y el texto de **Plantilla WhatsApp**:
+
+1. **LÍNEA 1: FEDEM PROVINCIAL (Plazos: 6, 12, 18, 24, 36, 48 cuotas)**[cite: 2]:
+   - Matriz exacta:
+     - `6`:  `{ cuotas: 6,  tna: 0.48942604, tem: 0.04078550, tea: 0.61560361, gastos: 0.25, seguro: 0.005, coef: 1.57,     temCft: 0.14638153 }`
+     - `12`: `{ cuotas: 12, tna: 0.53681994, tem: 0.04473499, tea: 0.69072785, gastos: 0.25, seguro: 0.005, coef: 1.832,    temCft: 0.10814229 }`
+     - `18`: `{ cuotas: 18, tna: 0.44666196, tem: 0.03722183, tea: 0.55045720, gastos: 0.34, seguro: 0.005, coef: 2.242364, temCft: 0.10337010 }`
+     - `24`: `{ cuotas: 24, tna: 0.53394403, tem: 0.04449534, tea: 0.68607954, gastos: 0.34, seguro: 0.005, coef: 2.677818, temCft: 0.10032896 }`
+     - `36`: `{ cuotas: 36, tna: 0.61456980, tem: 0.05121415, tea: 0.82093472, gastos: 0.34, seguro: 0.005, coef: 3.620727, temCft: 0.09698423 }`
+     - `48`: `{ cuotas: 48, tna: 0.64853029, tem: 0.05404419, tea: 0.88064070, gastos: 0.34, seguro: 0.005, coef: 4.635637, temCft: 0.09535618 }`
+   - Fórmulas exactas por cada plazo `n`:
+     - Si `modo === 'NETO'` (usuario ingresa `netoObjetivo`):
+       - `netoEntregar = netoObjetivo`
+       - `montoFinalDevolver = netoEntregar * coef`
+       - `valorCuota = montoFinalDevolver / n`
+     - Si `modo === 'CUOTA'` (usuario ingresa `cuotaObjetivo`):
+       - `valorCuota = cuotaObjetivo`
+       - `montoFinalDevolver = valorCuota * n`
+       - `netoEntregar = montoFinalDevolver / coef`
+     - Desglose Administrativo FEDEM:
+       - `capitalBruto = netoEntregar / (1 - gastos)`
+       - `comisionesGastos = capitalBruto * gastos`
+       - `seguroMensual = capitalBruto * seguro`
+       - `seguroTotal = seguroMensual * n`
+       - `cuotaPura = valorCuota - seguroMensual`
+       - `interesesFinancieros = montoFinalDevolver - capitalBruto - seguroTotal`
+
+2. **LÍNEA 2: MUNICIPALES — CONVENIO VIKINGO / QUAD (Plazos: 12 y 24 cuotas)**:
+   - Parámetros exactos:
+     - `factorVikingo = 0.85` (85,00%), `tnaQuad = 0.39595488` (39,60%), `temQuad = 0.39595488 / 12` (`0.03299624` = 3,30%)[cite: 2].
+     - `12`: `{ cuotas: 12, cftTea: 2.80, temCft: 0.11767439, coefCuota: 0.15970096, coefTotal: 1.91641149 }`[cite: 2].
+     - `24`: `{ cuotas: 24, cftTea: 2.20, temCft: 0.10178240, coefCuota: 0.11279781, coefTotal: 2.70714753 }`[cite: 2].
+   - Fórmulas exactas por cada plazo `n` (12 y 24):
+     - Si `modo === 'NETO'`:
+       - `netoEntregar = netoObjetivo`
+       - `valorCuota = netoEntregar * coefCuota`
+     - Si `modo === 'CUOTA'`:
+       - `valorCuota = cuotaObjetivo`
+       - `netoEntregar = valorCuota / coefCuota`
+     - Desglose Administrativo Municipales:
+       - `montoFinalDevolver = valorCuota * n`
+       - `capitalVikingo = netoEntregar / 0.85`
+       - `gastosOtorgVikingo = capitalVikingo - netoEntregar`
+       - `capitalSistemaQuad = valorCuota * ((1 - Math.pow(1 + temQuad, -n)) / temQuad)`
+       - `interesesFinancieros = montoFinalDevolver - capitalVikingo`
+
+3. **LÍNEA 3: TARJETA SIDECREER (Plazos: 6, 12, 18, 24, 36, 48 cuotas)**:
+   - Matriz exacta:
+     - `6`:  `{ cuotas: 6,  tna: 0.58534514, tem: 0.04877876, tea: 0.77095126, gastos: 0.25, seguro: 0.00, coef: 1.56999, temCft: 0.14637905 }`
+     - `12`: `{ cuotas: 12, tna: 0.63154362, tem: 0.05262864, tea: 0.85055570, gastos: 0.25, seguro: 0.00, coef: 1.83207, temCft: 0.10814999 }`
+     - `18`: `{ cuotas: 18, tna: 0.53972734, tem: 0.04497728, tea: 0.69543900, gastos: 0.34, seguro: 0.00, coef: 2.24242, temCft: 0.10337396 }`
+     - `24`: `{ cuotas: 24, tna: 0.61978356, tem: 0.05164863, tea: 0.82998666, gastos: 0.34, seguro: 0.00, coef: 2.67773, temCft: 0.10032449 }`
+     - `36`: `{ cuotas: 36, tna: 0.69009744, tem: 0.05750812, tea: 0.95616070, gastos: 0.34, seguro: 0.00, coef: 3.62048, temCft: 0.09697673 }`
+     - `48`: `{ cuotas: 48, tna: 0.71781259, tem: 0.05981772, tea: 1.00804804, gastos: 0.34, seguro: 0.00, coef: 4.63548, temCft: 0.09535278 }`
+   - Fórmulas exactas por cada plazo `n`:
+     - Si `modo === 'NETO'` (usuario ingresa `netoObjetivo`):
+       - `netoEntregar = netoObjetivo`
+       - `importeLinkSidecreer = netoEntregar * coef`
+       - `valorCuota = importeLinkSidecreer / n`
+     - Si `modo === 'LINK_TOTAL'` (usuario ingresa `montoLinkSidecreer`):
+       - `importeLinkSidecreer = montoLinkSidecreer`
+       - `valorCuota = importeLinkSidecreer / n`
+       - `netoEntregar = importeLinkSidecreer / coef`
+     - Si `modo === 'CUOTA'` (usuario ingresa `cuotaObjetivo`):
+       - `valorCuota = cuotaObjetivo`
+       - `importeLinkSidecreer = valorCuota * n`
+       - `netoEntregar = importeLinkSidecreer / coef`
+     - Desglose Administrativo Sidecreer:
+       - `capitalBruto = netoEntregar / (1 - gastos)`
+       - `comisionesGastos = capitalBruto * gastos`
+       - `seguroTotal = 0`
+       - `interesesFinancieros = importeLinkSidecreer - capitalBruto`
+       - `textoWhatsAppLinea = "💰$ " + Math.floor(netoEntregar).toLocaleString('es-AR') + " en " + n + " cuotas fijas de $ " + Math.round(valorCuota).toLocaleString('es-AR')`
+</simulators_engine_spec>
+
+<liquidations_and_commissions_spec>
+Implementa el motor de Liquidaciones de Ayudas y el de Comisiones de Comercializadores:
+1. `consultarLiquidacionesPorRangoFechasBackend(filtros)`:
+   - Filtra `Ayudas_Economicas` por:
+     - `fechaDesde` y `fechaHasta` (comparando contra `Fecha_Liquidacion` o `Fecha_Solicitud` según indique `filtros.criterioFecha`).
+     - `lineaAyuda` (`'TODAS'`, `'FEDEM Provincial'`, `'Municipalidad (VIKINGO)'`, `'Tarjeta Sidecreer'`).
+     - `originacion` (`'TODAS'`, `'Orgánica'`, `'Comercializador'`).
+     - `idComercializador` (`'TODOS'` o ID específico).
+     - `estadoTramite` (`'TODOS'`, `'Liquidado'`, `'Aprobado'`, etc.).
+   - Calcula y retorna el resumen sumario (`cantidadOperaciones`, `sumaMontoSolicitado`, `sumaMontoDepositado`, `sumaRetenidoRefi`, `sumaNetoEfectivoEntregado`, `sumaCapitalBruto`, `sumaTotalADevolver`, `desglosePorLinea`, `desglosePorComercializador`) más la lista detallada de operaciones.
+2. `guardarComercializadorBackend(datosComercializador)`:
+   - Alta/Edición en la hoja `Comercializadores` (`ID_Comercializador`, `Nombre_Estudio_Agente`, `DNI_CUIT`, `Telefono`, `Email`, `CBU_Pago`, `Base_Calculo_Comision` [`'Monto_Solicitado'`, `'Monto_Depositado'` o `'Neto_Efectivo_Entregado'`], `Porcentaje_Comision`, `Estado`)[cite: 2].
+3. `previsualizarLiquidacionComisionesBackend(params)`:
+   - Recibe `{ idComercializador, fechaDesde, fechaHasta }`.
+   - Busca todas las ayudas con `Originacion === 'Comercializador'`, `ID_Comercializador === idComercializador`, `Estado_Tramite === 'Liquidado'` dentro del rango de fechas que **no estén ya incluidas** en una liquidación previa no anulada en `Liquidaciones_Comisiones`.
+   - Calcula para cada operación la base elegida (`Monto_Solicitado`, `Monto_Depositado` o `Neto_Efectivo_Entregado`) y la comisión según `Porcentaje_Comision`.
+4. `emitirLiquidacionComisionesBackend(payload)` y `actualizarEstadoPagoLiquidacionBackend(idLiquidacion, nuevoEstado, urlComprobante, operador)`:
+   - Registra el lote oficial en `Liquidaciones_Comisiones` (`ID_Liquidacion` formato `LIQ-YYYYMM-XXXX`), permitiendo registrar el pago y adjuntar comprobante.
+</liquidations_and_commissions_spec>
+
+<portfolio_and_cessions_spec>
+Implementa el motor avanzado de Gestión de Carteras y Cesión de Carteras:
+1. `filtrarCarteraAyudasBackend(filtros)`:
+   - Permite filtrar `Ayudas_Economicas` combinando simultáneamente cualquiera de estos criterios:
+     - `montoSolicitadoMin`, `montoSolicitadoMax`
+     - `montoDepositadoMin`, `montoDepositadoMax`
+     - `netoEntregadoMin`, `netoEntregadoMax`
+     - `valorCuotaMin`, `valorCuotaMax`
+     - `cantidadCuotasTotal` (array o valor: 6, 12, 18, 24, 36, 48)
+     - `cuotasPagadasMin`, `cuotasPagadasMax`
+     - `cuotasRestantesMin`, `cuotasRestantesMax`
+     - `saldoRestanteMin`, `saldoRestanteMax`
+     - `lineaAyuda`, `organismo`, `idComercializador`, `estadoTramite`, `estadoCobranza`, `carteraTitular` (`'PROPIA'`, `'CEDIDA'`, `'TODAS'`), `idLoteCesion`, `fechaDesde`, `fechaHasta`.
+   - Para cada crédito filtrado calcula además su **Valor Presente Neto (VPN / Valor Actual Descontado)** de las `Cuotas_Restantes` usando una tasa mensual de descuento `tasaDescuentoMensualPct` (por defecto `4.5%` mensual o la enviada en el filtro):
+     - Fórmula VPN por ayuda: `vpnCredito = Valor_Cuota * ((1 - Math.pow(1 + tasaDescuentoDecimal, -Cuotas_Restantes)) / tasaDescuentoDecimal)`.
+   - Retorna `{ ok: true, creditosFiltrados, resumenCartera: { cantidadCreditos, totalMontoSolicitado, totalMontoDepositado, totalSaldoCapitalRestante, totalFlujoNominalRestante, totalValorPresenteDescontado, quitaDescuentoEstimada } }`.
+2. `ejecutarCesionCarteraBackend(payload)`:
+   - Recibe `{ cesionarioEntidad, cuitCesionario, idsAyudasSeleccionadas, tasaDescuentoAplicadaPct, precioVentaAcordado, modalidadCobranza, observaciones, operador }`.
+   - Genera `ID_Lote_Cesion` (`CES-YYYYMM-XXXX`), inserta el registro maestro en `Cesiones_Carteras` y actualiza en `Ayudas_Economicas` todas las ayudas incluidas asignando `Cartera_Titular = cesionarioEntidad`, `ID_Lote_Cesion = idLote` y `Fecha_Cesion = hoy`.
+   - Retorna el estado actualizado del CRM y el manifiesto del lote cedido listo para exportar.
+3. `revertirLoteCesionCarteraBackend(idLoteCesion, motivo, operador)`:
+   - Permite anular un lote de cesión en caso de error administrativo, restituyendo `Cartera_Titular = 'Cartera Propia Mutual'` en las ayudas asociadas.
+</portfolio_and_cessions_spec>
+
+<receipts_and_ai_gateway_spec>
+Implementa el Analizador de Recibos de Sueldo y la Capa de Integración IA-Ready (Gemini API + Darwin IA + WhatsApp API):
+1. `guardarAnalisisReciboBackend(datosAnalisis)` y `guardarCodigoDescuentoMaestroBackend(datosCodigo)`:
+   - Guarda en `Recibos_Y_Codigos` tanto nuevos códigos del clasificador maestro (`Tipo_Fila = 'CODIGO_MAESTRO'`) como liquidaciones de recibos analizados (`Tipo_Fila = 'ANALISIS_RECIBO'`), y si el usuario lo indica (`actualizarMargenSocio === true`), actualiza automáticamente `Sueldo_Bruto`, `Afectaciones_Ley`, `Afectaciones_Particulares`, `Sueldo_Neto` y `Margen_Cuota_Disponible` en `Socios_Padron`[cite: 2].
+2. `guardarConfiguracionIABackend(config)` y `obtenerConfiguracionIABackend()`:
+   - Almacena y recupera desde `PropertiesService.getScriptProperties()` las credenciales y flags de activación por etapas:
+     - `GEMINI_API_KEY`, `GEMINI_MODEL` (default `'gemini-2.5-flash'`), `IA_AUDITORIA_ACTIVA` (`'SI'`/`'NO'`).
+     - `DARWIN_IA_WEBHOOK_URL`, `DARWIN_IA_API_KEY`, `DARWIN_IA_ACTIVO` (`'SI'`/`'NO'`).
+     - `WHATSAPP_API_URL`, `WHATSAPP_API_TOKEN`, `WHATSAPP_INSTANCE_ID`, `WHATSAPP_API_ACTIVO` (`'SI'`/`'NO'`).
+3. `registrarLogIntegracionIA(canal, evento, dni, idRef, payloadIn, respuestaOut, estado, latenciaMs)`:
+   - Escribe cada interacción de agentes o webhooks en `Logs_Integraciones_IA`.
+4. `analizarReciboConAgenteIABackend(payload)`:
+   - Recibe `{ dni, base64Data, mimeType, reglaAfectacion, pctTope, operador }`.
+   - Si `GEMINI_API_KEY` está configurada, realiza una petición `UrlFetchApp.fetch` al endpoint oficial `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent` con `responseMimeType: "application/json"` extrayendo todos los ítems del recibo (`codigo`, `concepto`, `clasificacion`: `'HABER_COMPUTABLE' | 'NO_COMPUTABLE' | 'DESCUENTO_LEY' | 'DESCUENTO_PARTICULAR'`, `monto`) y cruzándolos con `Recibos_Y_Codigos`.
+   - Si aún no hay API Key cargada (modo etapa de pruebas), ejecuta un motor heurístico local de respaldo y devuelve la estructura idéntica lista para revisar en pantalla.
+5. `auditarDocumentacionAyudaConIABackend(idAyuda, operador)`:
+   - Revisa los documentos adjuntos en Drive de una ayuda económica (`Checklist_Doc_JSON` y `Archivos_Adjuntos_JSON`), verifica qué comprobantes están completos/faltantes y, si `GEMINI_API_KEY` está activa, inspecciona la legibilidad y consistencia de datos contra el legajo del socio.
+6. `procesarWebhookAgenteIA(e)` y `enviarMensajeDarwinWhatsAppBackend(payload)`:
+   - Enrutador de Webhooks para **Darwin IA** y **WhatsApp** con soporte para las acciones:
+     - `action = 'consultarMargenSocio'` (recibe `dni`, retorna estado del socio, margen de cuota disponible y si tiene bloqueos legales).
+     - `action = 'simularAyudaWhatsApp'` (recibe `linea`, `modo`, `valor`, `plazo`, retorna los planes calculados y el texto formateado para responder al socio en WhatsApp).
+     - `action = 'consultarEstadoTramite'` (recibe `dni` o `idAyuda`, retorna en qué etapa del Kanban se encuentra su solicitud y qué documentación le falta presentar).
+     - `action = 'registrarSeguimientoBot'` (permite a Darwin IA dejar asentado en `Seguimientos_Y_Alertas` un resumen de la conversación mantenida con el asociado por WhatsApp).
+</receipts_and_ai_gateway_spec>
+
+<output_format>
+Entrega únicamente el bloque de código completo de `02_Finanzas_Liquidaciones_Carteras_IA.gs` en JavaScript / Google Apps Script V8, sin omitir ninguna función ni línea de código.
+</output_format>
+
+
+Configuración recomendada para ejecutar este Prompt (Fase 2):
+Modelo: 3.1 Pro (excelente precisión aritmética y manejo de lógica financiera) o 4 Argon.
+Nivel de pensamiento: Alto (Muy minucioso).
+Entrega de código recomendada: Modular en partes (Módulo 2 de 4: 02_Finanzas_Liquidaciones_Carteras_IA.gs).
+📋 PROMPT — FASE 3: Sistema de Diseño UX/CX (Styles.html) y Estructura SPA Completa (Index.html) 
+
+<role>
+Actúa como Diseñador Senior UX/CX de Interfaces Financieras (Fintech / Mutuales) y Desarrollador Frontend Experto en HTML5 Semántico y CSS3 Moderno.
+Tu objetivo es programar el **Módulo 3 de 4**, compuesto por dos archivos completos: **`Styles.html`** e **`Index.html`**, para el sistema **"CRM & Backoffice Financiero — Asociación Mutual Modelo de Entre Ríos"**.
+</role>
+
+<strict_rules>
+1. CERO PLACEHOLDERS O SECCIONES OMITIDAS: Está prohibido usar `<!-- TODO -->`, `<!-- repetir para demás campos -->` o truncar tablas/modales. Entrega el 100% del código de `Styles.html` y el 100% de `Index.html`.
+2. INTEGRACIÓN CON APPS SCRIPT:
+   - `Styles.html` debe ir envuelto en etiquetas `<style>...</style>`.
+   - `Index.html` debe ser un documento HTML5 completo que incluya en el `<head>` las fuentes `Inter` y `JetBrains Mono`, la librería `pdf.js` (`3.11.174`) para lectura de recibos PDF[cite: 3], la llamada `<?!= include('Styles'); ?>`, y antes de cerrar `</body>` la llamada `<?!= include('Scripts'); ?>`.
+3. ARQUITECTURA UX/CX DE REVELACIÓN PROGRESIVA:
+   - La interfaz debe ser limpia, minimalista y guiada para un operador aprendiz/comercial, pero densa en datos y controles técnicos para un auditor/administrativo experto.
+   - Implementa en CSS la clase `.vista-comercial-activa` sobre el contenedor del simulador para ocultar automáticamente todas las columnas y paneles con clase `.solo-vista-admin`, mostrando únicamente los 4 datos clave comerciales; y al conmutar a `.vista-admin-activa`, despliega suavemente todo el desglose técnico-financiero.
+4. CONTRATO ESTRICTO DE IDs DEL DOM: Respeta exactamente todos los `id` especificados en `<dom_id_contract>` para que el motor JavaScript (`Scripts.html`) se enlace sin errores de referencias nulas.
+</strict_rules>
+
+<design_system_spec>
+En `Styles.html`, implementa un sistema de diseño corporativo moderno y ergonómico[cite: 3]:
+1. **Variables CSS (`:root`)**:
+   - Colores institucionales Mutual Modelo: `--primary: #135596`, `--primary-dark: #0d3b68`, `--primary-light: #2563eb`, `--primary-subtle: #eff6ff`[cite: 3].
+   - Semánticos: `--emerald: #059669` (`--emerald-subtle: #ecfdf5`), `--amber: #d97706` (`--amber-subtle: #fffbeb`), `--rose: #e11d48` (`--rose-subtle: #fff1f2`), `--purple: #7c3aed` (`--purple-subtle: #f5f3ff`)[cite: 3].
+   - Neutros y superficies: `--bg-body: #f1f5f9`, `--bg-card: #ffffff`, `--slate-dark: #0f172a`, `--border: #e2e8f0`, `--text-main: #0f172a`, `--text-muted: #64748b`[cite: 3].
+2. **Componentes UI**:
+   - Cabecera superior fija (`.main-header`) con buscador global integrado, indicador de estado de conexión con Google Sheets/Drive y selector de operador activo[cite: 3].
+   - Barra de navegación de 7 pestañas (`.nav-tabs-bar`) con indicadores numéricos (badges) de alertas vencidas y trámites pendientes[cite: 3].
+   - Interruptor maestro segmentado (`.view-mode-switch`) para alternar entre **🟢 Vista Comercial (Simple)** y **🛡️ Vista Administrativa (Completa)**.
+   - Tarjetas KPI, grillas responsivas (`.grid-2`, `.grid-3`, `.grid-4`, `.grid-6`), tablas de alta densidad con cabecera fija (`position: sticky; top: 0`) y números tabulares (`.mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }`)[cite: 3].
+   - Semáforos de alertas legales/administrativas (`.flag-pill.danger`, `.flag-pill.warning`, `.flag-pill.info`, `.flag-pill.success`).
+   - Tablero Kanban de 4 columnas (`.kanban-board`) y Checklists documentales interactivos.
+   - Modales flotantes con `backdrop-filter: blur(4px)` y estilos de impresión `@media print` limpios para imprimir liquidaciones, legajos y anexos de cesión de carteras[cite: 3].
+</design_system_spec>
+
+<screens_and_dom_id_contract>
+En `Index.html`, construye la Cabecera Global, la Barra de Navegación de 7 Módulos, las 7 Pantallas (`.app-screen`) y las 5 Ventanas Modales respetando estos IDs exactos:
+
+### A. CABECERA GLOBAL Y NAVEGACIÓN
+- Logo SVG precargado (`#img-logo-mutual`)[cite: 2, 3].
+- Buscador global: `#inp-buscar-dni-global` + botón `buscarSocioGlobalUI()`[cite: 3].
+- Selector de operador activo: `#sel-operador-activo` (`onchange="cambiarOperadorActivoUI(this.value)"`)[cite: 3].
+- Botones de acción rápida en cabecera: `+ Nuevo Asociado` (`abrirModalSocioUI()`), `+ Nueva Ayuda` (`abrirModalAyudaUI()`), `+ Alerta / Seguimiento` (`abrirModalSeguimientoUI()`).
+- Pestañas de navegación (`cambiarPantallaCRM(idPantalla, this)`):
+  1. `tab-asociados` -> `#screen-asociados` (👥 1. Asociados & Ficha 360°)
+  2. `tab-simuladores` -> `#screen-simuladores` (🧮 2. Simuladores & Recibos)
+  3. `tab-ayudas` -> `#screen-ayudas` (💰 3. Ayudas Económicas & Legajos)
+  4. `tab-alertas` -> `#screen-alertas` (🔔 4. Seguimientos & Alertas)
+  5. `tab-liquidaciones` -> `#screen-liquidaciones` (📅 5. Liquidaciones por Fechas)
+  6. `tab-comercializadores` -> `#screen-comercializadores` (🤝 6. Comercializadores & Comisiones)
+  7. `tab-carteras-ia` -> `#screen-carteras-ia` (💼 7. Carteras, Cesiones & IA)
+
+### B. PANTALLA 1: `#screen-asociados` (ABM DE ASOCIADOS, FICHA 360° Y LEGAJO EN DRIVE)
+1. **Panel Ficha 360° del Asociado Seleccionado (`#panel-ficha-360`, oculto hasta seleccionar un socio)**:
+   - Cabecera de datos filiatorios: `#f360-nombre`, `#f360-dni`, `#f360-nro-socio`, `#f360-organismo-sector`, `#f360-edad-condicion`, `#f360-contacto-cbu`[cite: 3].
+   - **Barra de Banderas y Alertas Administrativas (`#f360-banderas-container`)**: Muestra píldoras de alerta para `Bloqueado_Legales`, `En_Tramite_Jubilacion`, `Pagos_Duplicados`, `Alivio_Financiero`, `Certificacion_Deuda` y `Estado_Cuota_Social`.
+   - **4 KPIs Financieros del Socio**: `#f360-sueldo-bruto`, `#f360-sueldo-neto`, `#f360-margen-disponible`, `#f360-monto-preaprobado`[cite: 3].
+   - **Panel de Legajo Digital en Google Drive**:
+     - Estado de carpeta Drive y botón `#btn-abrir-carpeta-drive-socio` + botón `crearCarpetaDriveSocioActualUI()`.
+     - Subida rápida de documento al legajo: selector `#sel-tipo-doc-socio` (`DNI Frente/Dorso`, `Recibo de Sueldo`, `Constancia CBU`, `Certificación Deuda`, `Otro`), input file `#inp-file-doc-socio` y botón `subirArchivoLegajoSocioUI()`.
+   - **Sub-grilla 3 columnas en Ficha 360°**:
+     - Columna 1: Grupo Familiar editable (`#tbody-f360-familiares`) + Subsidios (`#tbody-f360-subsidios`)[cite: 3].
+     - Columna 2: Ayudas Económicas del Socio (`#tbody-f360-ayudas`) con estado documental y saldo.
+     - Columna 3: Bitácora de Seguimientos y Alertas del Socio (`#tbody-f360-seguimientos`).
+2. **Padrón General de Asociados con Filtros**:
+   - Filtros: `#filtro-padron-texto`, `#filtro-padron-organismo`, `#filtro-padron-estado-cuota`, `#filtro-padron-alerta-especial` (`Todos`, `Bloqueados Legales`, `En Trámite Jubilación`, `Pagos Duplicados`, `Alivio Financiero`).
+   - Tabla `#tbody-padron-socios` con botón `"Ver Ficha 360°"`, `"Simular Ayuda"` y `"Editar"`[cite: 3].
+
+### C. PANTALLA 2: `#screen-simuladores` (SIMULADORES DOBLE VISTA + PLANTILLAS WHATSAPP + ANALIZADOR DE RECIBOS)
+1. **Barra Superior de Control del Simulador**:
+   - **Switch Maestro de Vista (`#contenedor-switch-vista`)**:
+     - Botón `#btn-vista-comercial` (`activarVistaSimulador('COMERCIAL')`): Activa **🟢 Vista Comercial (Simple)** mostrando solo Plazo, Valor de Cuota, Monto Neto a Entregar y Monto Final a Devolver.
+     - Botón `#btn-vista-administrativa` (`activarVistaSimulador('ADMINISTRATIVA')`): Activa **🛡️ Vista Administrativa (Completa)** revelando todas las columnas `.solo-vista-admin` (Capital Bruto, Cuota Pura, Intereses Financieros, Seguro 0,50%, Gastos 25%/34%, Capital VIKINGO, Capital QUAD, Importe Link Sidecreer, TNA, TEM, TEA, CFT)[cite: 2, 3].
+   - Sub-selector de herramienta: `🧮 Simuladores de Planes (FEDEM / Muni / Sidecreer)` (`#subvista-calculadoras`) vs. `📄 Analizador de Recibos de Sueldo` (`#subvista-analizador-recibos`)[cite: 3].
+2. **Panel de Parámetros de Entrada (`#panel-inputs-simulador`)**:
+   - Selector de Modo de Cálculo (`#sel-modo-calculo-sim`):
+     - `NETO`: Calcular a partir de **Monto Neto a Entregar en Mano ($)**.
+     - `CUOTA`: Calcular a partir de **Cuota Mensual Objetivo / Margen Disponible ($)**.
+     - `LINK_SIDECREER`: Calcular a partir de **Monto Final Link Sidecreer ($)**.
+   - Input numérico principal: `#inp-sim-valor-principal` (por defecto `1000000`), selector de plazo destacado `#sel-sim-plazo-destacado` (`6, 12, 18, 24, 36, 48`), input `#inp-sim-nombre-cliente` y `#inp-sim-dni-cliente`[cite: 3].
+   - Filtro de líneas visibles: Checkboxes `#chk-ver-fedem`, `#chk-ver-municipales`, `#chk-ver-sidecreer`.
+3. **Las 3 Tablas Oficiales de Simulación (con soporte automático de Vista Comercial / Vista Administrativa)**:
+   - **Bloque 1: FEDEM Provincial (6 a 48 cuotas)** (`#card-sim-fedem`, `#tbody-sim-fedem`) con botón `"📋 Copiar Planes FEDEM p/ WhatsApp"` y `"➕ Crear Ayuda con Plan Seleccionado"`[cite: 3].
+   - **Bloque 2: Municipales — Convenio VIKINGO / QUAD (12 y 24 cuotas)** (`#card-sim-municipales`, `#tbody-sim-municipales` + tabla desplegable de escalas rápidas `#tbody-escalas-municipales` de $5.000.000 a $50.000) con botón `"📋 Copiar Planes Municipales p/ WhatsApp"`[cite: 3].
+   - **Bloque 3: Tarjeta Sidecreer (6 a 48 cuotas)** (`#card-sim-sidecreer`, `#tbody-sim-sidecreer`) incluyendo columna de texto rápido `💰$ {Neto} en {N} cuotas fijas de $ {Cuota}` y botón `"📋 Copiar Planes Sidecreer p/ WhatsApp"`.
+4. **Complementador de Líneas Combinadas (`.solo-vista-admin`)** (`#tbody-complementador-lineas`, `#lbl-totales-complementador`)[cite: 3].
+5. **Generador y Editor de Plantillas para WhatsApp (`#card-plantilla-whatsapp`)**:
+   - Selector de plantilla rápida `#sel-tipo-plantilla-wa` (`Oferta Completa Multilínea`, `Solo FEDEM Todos los Plazos`, `Solo Municipales 12 y 24`, `Solo Sidecreer Todos los Plazos`, `Plan Único Destacado`).
+   - Textarea editable `#txt-plantilla-whatsapp`, botón `"📋 Copiar al Portapapeles"`, input `#inp-tel-whatsapp-sim` y botón `"📲 Enviar por WhatsApp"`[cite: 3].
+6. **Sub-vista: Analizador de Recibos de Sueldo (`#subvista-analizador-recibos`)**:
+   - Subida de PDF (`#inp-pdf-recibo`), botón `"🤖 Analizar con Agente IA (OCR Gemini)"`, buscador en el catálogo de códigos de descuento (`#inp-buscar-codigo-descuento`), selector de regla `#sel-regla-afectacion`, input `#inp-tope-afectacion-pct` (`35%` / `40%`), KPIs (`#lbl-rec-haberes`, `#lbl-rec-ley`, `#lbl-rec-particulares`, `#lbl-rec-margen-disponible`), tabla editable `#tbody-items-recibo` y botón `"➡️ Transferir Margen al Simulador"`[cite: 3].
+
+### D. PANTALLA 3: `#screen-ayudas` (ABM DE AYUDAS ECONÓMICAS, LEGAJOS Y REFINANCIACIONES)
+- Conmutador `Vista Kanban` (`#vista-ayudas-kanban`) vs. `Vista Tabla Administrativa` (`#vista-ayudas-tabla`).
+- Filtros rápidos: `#filtro-ayudas-texto`, `#filtro-ayudas-linea`, `#filtro-ayudas-estado`, `#filtro-ayudas-doc` (`Todos`, `Legajo Incompleto`, `Legajo Completo`).
+- 4 Columnas Kanban: `#kb-col-solicitado`, `#kb-col-evaluacion`, `#kb-col-aprobado`, `#kb-col-liquidado`[cite: 3].
+- Tabla completa `#tbody-ayudas-general` con acceso directo al **Legajo Documental en Drive**, **Checklist de Documentos** y **Cuadro de Marcha de Cuotas**.
+
+### E. PANTALLA 4: `#screen-alertas` (SEGUIMIENTOS ADMINISTRATIVOS Y ALERTAS DE TRÁMITES)
+- 4 Tarjetas semáforo de SLA: `#kpi-alertas-vencidas` (Rojo), `#kpi-alertas-hoy` (Ámbar), `#kpi-alertas-proximas` (Azul), `#kpi-alertas-resueltas` (Verde).
+- Barra de filtros: `#filtro-alertas-texto`, `#filtro-alertas-estado-sla`, `#filtro-alertas-prioridad`, `#filtro-alertas-categoria`, `#filtro-alertas-operador`.
+- Tabla `#tbody-seguimientos-alertas` con botones para marcar como `"En Gestión"`, `"Resuelta"`, `"Reprogramar"` o `"Notificar por WhatsApp"`.
+
+### F. PANTALLA 5: `#screen-liquidaciones` (LIQUIDACIONES DE AYUDAS ECONÓMICAS POR RANGO DE FECHAS)
+- Barra de filtros por período: `#liq-criterio-fecha` (`Fecha de Liquidación` / `Fecha de Solicitud`), `#liq-fecha-desde`, `#liq-fecha-hasta`, `#liq-filtro-linea`, `#liq-filtro-originacion`, `#liq-filtro-comercializador`, `#liq-filtro-estado`, botón `ejecutarFiltroLiquidacionesFechasUI()`.
+- 6 KPIs de Tesorería del rango filtrado:
+  - `#kpi-liq-cantidad`, `#kpi-liq-solicitado`, `#kpi-liq-depositado`, `#kpi-liq-retenido-refi`, `#kpi-liq-neto-efectivo`, `#kpi-liq-total-devolver`.
+- Resumen agrupado por línea (`#tbody-liq-resumen-lineas`) y Tabla maestra detallada de liquidaciones (`#tbody-liquidaciones-rango`) con botones `"📥 Exportar a Excel/CSV"` y `"🖨️ Imprimir Planilla de Liquidación"`.
+
+### G. PANTALLA 6: `#screen-comercializadores` (INFORMES DE COMERCIALIZADORES Y LIQUIDACIÓN DE COMISIONES)
+- Sección 1: Padrón de Comercializadores (`#tbody-comercializadores`) y botón `+ Nuevo Comercializador` (`abrirModalComercializadorUI()`).
+- Sección 2: Liquidador de Comisiones por Rango de Fechas:
+  - Controles: `#comis-sel-comercializador`, `#comis-fecha-desde`, `#comis-fecha-hasta`, `#comis-inp-deducciones`, botón `previsualizarComisionesUI()` y botón `emitirLiquidacionComisionesOficialUI()`.
+  - KPIs de liquidación: `#kpi-comis-ops`, `#kpi-comis-base-total`, `#kpi-comis-pct`, `#kpi-comis-neto-pagar`.
+  - Tabla de operaciones incluidas en la previsualización (`#tbody-previsualizacion-comisiones`).
+- Sección 3: Historial de Liquidaciones de Comisiones Emitidas (`#tbody-liquidaciones-comisiones-historial`) con control de estado (`Pendiente de Pago` / `Pagado`).
+
+### H. PANTALLA 7: `#screen-carteras-ia` (GESTIÓN DE CARTERAS, CESIONES DE CARTERA Y AGENTES IA)
+1. **Motor Multifiltro de Gestión y Cesión de Carteras**:
+   - Grilla de filtros combinables:
+     - `#cart-monto-sol-min`, `#cart-monto-sol-max` (Monto Solicitado)
+     - `#cart-monto-dep-min`, `#cart-monto-dep-max` (Monto Depositado)
+     - `#cart-cuota-min`, `#cart-cuota-max` (Valor de Cuota)
+     - `#cart-cant-cuotas` (Plazo total: Todas, 6, 12, 18, 24, 36, 48)
+     - `#cart-cuotas-pag-min`, `#cart-cuotas-pag-max` (Cuotas Pagadas)
+     - `#cart-cuotas-rest-min`, `#cart-cuotas-rest-max` (Cuotas Restantes)
+     - `#cart-saldo-rest-min`, `#cart-saldo-rest-max` (Saldo Restante $)
+     - `#cart-linea-ayuda`, `#cart-organismo`, `#cart-comercializador`, `#cart-estado-cobranza`, `#cart-titular-actual` (`Cartera Propia Mutual`, `Cedida`, `Todas`), `#cart-lote-cesion`, `#cart-fecha-desde`, `#cart-fecha-hasta`.
+     - `#cart-tasa-descuento-vpn` (Tasa mensual de descuento % para valuar la cartera, ej. `4.5`).
+   - Barra de Valuación de la Cartera Seleccionada:
+     - `#kpi-cart-seleccionados`, `#kpi-cart-capital-original`, `#kpi-cart-flujo-nominal-restante`, `#kpi-cart-vpn-descontado`, `#kpi-cart-quita-estimada`.
+     - Botones: `"☑️ Seleccionar Todos los Filtrados"`, `"📥 Exportar Cartera Filtrada (CSV)"` y `"🤝 Ejecutar Cesión de Cartera Seleccionada"` (`abrirModalCesionCarteraUI()`).
+   - Tabla interactiva de créditos (`#tbody-cartera-filtrada`) con checkboxes por fila y tabla histórica de lotes cedidos (`#tbody-lotes-cesion-historial`).
+2. **Panel de Arquitectura IA-Ready (Gemini API, Darwin IA & WhatsApp)**:
+   - Tarjetas de configuración y testeo por etapas (`#inp-ia-gemini-key`, `#sel-ia-gemini-model`, `#chk-ia-auditoria-activa`, `#inp-ia-darwin-url`, `#inp-ia-darwin-key`, `#chk-ia-darwin-activo`, `#inp-ia-wa-url`, `#inp-ia-wa-token`, `#chk-ia-wa-activo` + botón `guardarConfiguracionIA_UI()`).
+   - Tabla de auditoría en vivo de llamadas y webhooks (`#tbody-logs-ia`).
+
+### I. LAS 5 VENTANAS MODALES OBLIGATORIAS
+1. `#modal-socio`: Formulario completo de Asociado (Datos personales, laborales, sueldos/márgenes y banderas administrativas: Legales, Jubilación, Pagos Duplicados, Alivio Financiero, Certificación de Deuda).
+2. `#modal-ayuda`: Alta/Edición de Ayuda Económica + Calculadora de Refinanciación (selector de préstamos vigentes a cancelar + deudas manuales + cálculo automático de efectivo en mano) + Checklist Documental (DNI, Recibos, CBU, Mutuo, Pagaré, Libre Deuda) con cargador de archivos a Google Drive y botón `"🤖 Auditar Legajo con IA"`.
+3. `#modal-seguimiento`: Carga/Edición de Seguimiento Administrativo o Alerta con fecha de vencimiento y prioridad.
+4. `#modal-comercializador`: Alta/Edición de Comercializador y su esquema de comisión.
+5. `#modal-cesion-cartera`: Formalización del Lote de Cesión de Cartera (Cesionario, CUIT, Tasa de Descuento, Precio de Venta Acordado, Modalidad de Cobranza, Observaciones).
+</screens_and_dom_id_contract>
+
+<output_format>
+Entrega dos bloques de código separados e íntegros:
+1. Primero `Styles.html` completo.
+2. Segundo `Index.html` completo.
+No utilices abreviaciones ni omitas ningún elemento del contrato de IDs.
+</output_format>
+
+
+Configuración recomendada para ejecutar este Prompt (Fase 3):
+Modelo: 4 Argon (ideal para generar interfaces HTML/CSS extensas y minuciosas de una sola vez) o 3.1 Pro.
+Nivel de pensamiento: Alto (Muy minucioso).
+Entrega de código recomendada: Modular en partes (Módulo 3 de 4: Styles.html + Index.html).
+Aquí tienes el Prompt de la Fase 4, diseñado para construir el motor completo de lógica frontend en JavaScript (Scripts.html) y dar por completada la arquitectura del sistema CRM & Backoffice Financiero de la Mutual Modelo.
+Este módulo interactivo se enlaza mediante <?!= include('Scripts'); ?> en Index.html y se conecta directamente con los contratos de IDs definidos en la Fase 3 y los endpoints del servidor programados en las Fases 1 y 2.
+
+📋 PROMPT — FASE 4: Lógica Frontend JavaScript, Simuladores Reactivos, Plantillas de WhatsApp, Filtros Dinámicos y Analizador de Recibos (Scripts.html)
+Copia y pega el siguiente bloque completo:
+<role>
+Actúa como Desarrollador Frontend Senior JavaScript (Vanilla JS ES6+) y Arquitecto UX/CX de Interfaces Financieras.
+Tu objetivo es programar el **Módulo 4 de 4 (`Scripts.html`)**, que completa al 100% el sistema **"CRM & Backoffice Financiero — Asociación Mutual Modelo de Entre Ríos"**.
+Este archivo va envuelto en etiquetas `<script>...</script>` e implementa toda la lógica reactiva del cliente, enlazando directamente con la estructura de `Index.html` (Fase 3) y los servidores `01_Core_DB_Drive_ABM.gs` y `02_Finanzas_Liquidaciones_Carteras_IA.gs` (Fases 1 y 2).
+</role>
+
+<strict_rules>
+1. CERO PLACEHOLDERS O CÓDIGO INCOMPLETO: Prohibido usar `// TODO`, `// implementar luego`, `// ... resto de funciones` o manejadores de eventos vacíos. Escribe el 100% del código Vanilla JS funcional.
+2. ADHERENCIA ESTRICTA AL CONTRATO DE IDs: Utiliza exactamente los mismos IDs del DOM definidos en `Index.html` (Fase 3): `#inp-buscar-dni-global`, `#sel-operador-activo`, `#btn-vista-comercial`, `#btn-vista-administrativa`, `#tbody-sim-fedem`, `#tbody-sim-municipales`, `#tbody-sim-sidecreer`, `#tbody-cartera-filtrada`, `#tbody-liquidaciones-rango`, etc.
+3. COMUNICACIÓN ASÍNCRONA ROBUSTA (PROMISES):
+   - Envuelve todas las llamadas a `google.script.run` en una función `ejecutarBackendAsync(nombreFuncion, ...args)` que retorne una `Promise`.
+   - Muestra un spinner / overlay de carga global (`#loader-overlay`) durante las peticiones y gestiona captura de errores con alertas visuales amigables (Toast / SweetAlert nativo).
+4. REACTIVIDAD E HIGIENE DE MEMORIA:
+   - Mantén el estado global de la aplicación en un objeto `estadoCRM` en memoria.
+   - Toda tabla o informe filtrado debe ejecutarse instantáneamente en memoria (`Array.prototype.filter`, `map`, `reduce`) sin recargar la página.
+</strict_rules>
+
+<state_management_spec>
+Define e inicializa al comienzo del script el objeto `estadoCRM`:
+```javascript
+const estadoCRM = {
+  operadorActivo: 'Julian',
+  vistaSimuladorActual: 'COMERCIAL', // 'COMERCIAL' | 'ADMINISTRATIVA'
+  socioSeleccionado: null,
+  padronSocios: [],
+  ayudasEconomicas: [],
+  seguimientosAlertas: [],
+  comercializadores: [],
+  liquidacionesComisiones: [],
+  cesionesCarteras: [],
+  catalogoCodigosDescuento: [],
+  tasasOficiales: null,
+  configIA: null,
+  carteraFiltradaSeleccionada: new Set(),
+  reciboAnalizadoActual: null
+};
+Implementa window.onload = function() invocando inicializarCRM_UI(), la cual llama a ejecutarBackendAsync('obtenerDatosInicialesCRM') para cargar todos los datos semilla/reales y renderizar la interfaz. </state_management_spec>
+<async_bridge_spec> Implementa el motor de comunicación asíncrona:
+ejecutarBackendAsync(nombreFuncion, ...args):
+Retorna una Promise que resuelve con la respuesta del servidor o rechaza con el error.
+Activa el indicador de carga #loader-overlay y lo desactiva en finally.
+mostrarNotificacionToast(mensaje, tipo = 'info'):
+Muestra avisos emergentes efímeros (verde para éxito, rojo para error, naranja para advertencia). </async_bridge_spec>
+<simulators_frontend_engine_spec> Implementa el motor dinámico de los 3 simuladores con soporte instantáneo de Vista Comercial vs Vista Administrativa:
+activarVistaSimulador(modo):
+Si modo === 'COMERCIAL', agrega la clase .vista-comercial-activa al contenedor #contenedor-simuladores, remueve .vista-admin-activa y actualiza el estado activo de los botones #btn-vista-comercial y #btn-vista-administrativa.
+Si modo === 'ADMINISTRATIVA', agrega la clase .vista-admin-activa y oculta/muestra las columnas con clase .solo-vista-admin.
+ejecutarSimulacionEnVivoUI():
+Captura en tiempo real los valores de los inputs #sel-modo-calculo-sim, #inp-sim-valor-principal, #sel-sim-plazo-destacado, #inp-sim-nombre-cliente y los checkboxes de líneas visibles (#chk-ver-fedem, #chk-ver-municipales, #chk-ver-sidecreer).
+Ejecuta localmente en JS los cálculos de las 3 líneas oficiales para una respuesta instantánea (0 ms de latencia) aplicando las fórmulas exactas:
+FEDEM Provincial: Plazos 6, 12, 18, 24, 36, 48 cuotas. Gastos 25% (6 y 12 cuotas) / 34% (18 a 48 cuotas), Seguro 0.50%, Coeficientes (1.57, 1.832, 2.242364, 2.677818, 3.620727, 4.635637).
+Municipales VIKINGO / QUAD: Plazos 12 y 24 cuotas. Factor VIKINGO 85%, TNA QUAD 39.60%, TEM QUAD 3.30%, Coeficientes de Cuota (0.15970096 / 0.11279781) y Coeficientes Totales (1.91641149 / 2.70714753). Renderiza también la tabla desplegable de escalas rápidas (#tbody-escalas-municipales).
+Tarjeta Sidecreer: Plazos 6, 12, 18, 24, 36, 48 cuotas. Gastos 25% / 34%, Seguro 0.00%, Coeficientes (1.56999, 1.83207, 2.24242, 2.67773, 3.62048, 4.63548).
+Renderiza los resultados en #tbody-sim-fedem, #tbody-sim-municipales y #tbody-sim-sidecreer.
+Actualiza el cuadro de líneas combinadas (#tbody-complementador-lineas).
+Actualiza automáticamente la vista previa de la plantilla de WhatsApp (#txt-plantilla-whatsapp).
+generarTextoPlantillaWhatsAppUI(tipoPlantilla):
+Formatea el texto listo para enviar por WhatsApp incluyendo emojis corporativos, el desglose limpio de cuotas (💰$ {Neto} en {N} cuotas fijas de $ {Cuota}), y los datos del operador activo.
+copiarPlantillaWhatsAppUI() y enviarWhatsAppClienteUI():
+copiarPlantillaWhatsAppUI() copia #txt-plantilla-whatsapp al portapapeles usando navigator.clipboard.writeText.
+enviarWhatsAppClienteUI() abre una ventana flotante de WhatsApp Web / App ([suspicious link removed]{telefono}&text=${encodeURIComponent(texto)}). </simulators_frontend_engine_spec>
+<receipt_analyzer_frontend_spec> Implementa el motor visual del Analizador de Recibos de Sueldo:
+cargarArchivoReciboPDF_UI(event):
+Utiliza pdf.js (pdfjsLib.getDocument) para leer y extraer el texto completo de las páginas del PDF subido en #inp-pdf-recibo.
+procesarAnalisisReciboIA_UI():
+Envía el texto extraído o el archivo Base64 a ejecutarBackendAsync('analizarReciboConAgenteIABackend', payload).
+Renderiza en #tbody-items-recibo la lista clasificada de ítems (Haberes Computables, No Computables, Descuentos de Ley y Particulares).
+Calcula reactivamente los totales en #lbl-rec-haberes, #lbl-rec-ley, #lbl-rec-particulares y el Margen de Cuota Disponible aplicando el tope seleccionado (#sel-regla-afectacion / #inp-tope-afectacion-pct).
+transferirMargenAlSimuladorUI():
+Copia el margen disponible calculado al input del simulador (#inp-sim-valor-principal), cambia la pestaña activa a Simuladores (tab-simuladores), establece el modo en 'CUOTA' (#sel-modo-calculo-sim) y dispara ejecutarSimulacionEnVivoUI(). </receipt_analyzer_frontend_spec>
+<abm_and_drive_frontend_spec> Implementa la interacción de Ficha 360°, ABM y subida de documentación a Drive:
+seleccionarSocio360UI(dni):
+Busca el socio en estadoCRM.padronSocios, actualiza la Ficha 360° (#f360-nombre, #f360-dni, #f360-nro-socio, etc.), renderiza las píldoras de semáforo administrativo (#f360-banderas-container) y carga sus tablas asociadas (#tbody-f360-familiares, #tbody-f360-subsidios, #tbody-f360-ayudas, #tbody-f360-seguimientos).
+subirArchivoLegajoSocioUI():
+Lee el archivo seleccionado en #inp-file-doc-socio mediante FileReader nativo (readAsDataURL), convierte a Base64, captura #sel-tipo-doc-socio y envía a ejecutarBackendAsync('subirDocumentoLegajoBackend', payload).
+Al finalizar, refresca la lista de documentos en Drive y muestra el badge de confirmación.
+guardarSocioSubmitUI():
+Recolecta los datos del formulario #modal-socio, ejecuta ejecutarBackendAsync('guardarAsociadoBackend', datos) y refresca el padrón general y la ficha 360°.
+guardarAyudaSubmitUI():
+Recolecta los datos del formulario #modal-ayuda (incluyendo préstamos seleccionados a cancelar en caso de refinanciación) y los envía al servidor. </abm_and_drive_frontend_spec>
+<liquidations_and_portfolio_frontend_spec> Implementa los filtros dinámicos en memoria y exportaciones:
+ejecutarFiltroLiquidacionesFechasUI():
+Lee las fechas #liq-fecha-desde, #liq-fecha-hasta y demás selectores de filtro, llama a ejecutarBackendAsync('consultarLiquidacionesPorRangoFechasBackend', filtros) y renderiza las tarjetas KPI (#kpi-liq-cantidad, #kpi-liq-solicitado, etc.) y la tabla maestra (#tbody-liquidaciones-rango).
+filtrarCarteraAyudasUI():
+Lee los 15 parámetros de filtro de la consola de carteras (#cart-monto-sol-min, #cart-monto-sol-max, #cart-cuota-min, #cart-cuota-max, #cart-cuotas-rest-min, #cart-tasa-descuento-vpn, etc.).
+Ejecuta ejecutarBackendAsync('filtrarCarteraAyudasBackend', filtros) y renderiza en tiempo real en #tbody-cartera-filtrada agregando los KPIs de valuación (#kpi-cart-seleccionados, #kpi-cart-capital-original, #kpi-cart-vpn-descontado, #kpi-cart-quita-estimada).
+toggleSeleccionCreditoCarteraUI(idAyuda, checkbox):
+Agrega o remueve idAyuda de estadoCRM.carteraFiltradaSeleccionada y recalcula en vivo el resumen sumario de la cesión proyectada.
+exportarTablaACSV(idTabla, nombreArchivo):
+Convierte cualquier tabla HTML presente en pantalla a un archivo CSV descargable con codificación UTF-8 con BOM (\uFEFF) para compatibilidad directa con Microsoft Excel.
+imprimirPlanillaUI(idContenedor):
+Desencadena window.print() aplicando las reglas @media print definidas en Styles.html para imprimir legajos, liquidaciones o anexos de cesión. </liquidations_and_portfolio_frontend_spec>
+<output_format> Entrega únicamente el bloque de código completo de Scripts.html envuelto en etiquetas <script>...</script>, garantizando que no falte ninguna función, manejador de eventos ni corchete de cierre. </output_format>
+
+---
+
+### 💡 Resumen Ejecutivo de la Arquitectura Completada (4 Fases)
+
+Con la entrega de esta **Fase 4**, el sistema queda estructurado en **8 archivos modulares** en Google Apps Script, listos para producción o empaquetado directo en `.zip`:
+
+1. **`appsscript.json`**: Manifiesto oficial con permisos V8, zona horaria de Argentina y scopes de Sheets/Drive/UrlFetch.
+2. **`01_Config_DB_Drive.gs`** *(Fase 1)*: Motor de Base de Datos en Sheets (8 hojas normalizadas), menú corporativo y creador de carpetas de **Legajos en Google Drive**.
+3. **`02_ABM_Socios_Ayudas_Alertas.gs`** *(Fase 1)*: CRUD de Asociados (Ficha 360°), Ayudas Económicas con trazabilidad de refinanciación y seguimiento de alertas SLA.
+4. **`03_Simuladores_Liquidaciones_Carteras.gs`** *(Fase 2)*: Fórmulas matemáticas financieras oficiales (**FEDEM**, **Municipales VIKINGO/QUAD** y **Sidecreer**), motor de liquidaciones por fechas, comisiones de comercializadores y valuación VPN de cesión de carteras.
+5. **`04_Analizador_Recibos_Y_AIGateway.gs`** *(Fase 2)*: Motor OCR de recibos de sueldo y Webhooks para **Gemini API**, **Darwin IA** y **WhatsApp API**.
+6. **`Index.html`** *(Fase 3)*: Estructura SPA con la cabecera fija, navegación de 7 módulos, la interfaz de doble vista y las 5 ventanas modales.
+7. **`Styles.html`** *(Fase 3)*: Sistema de diseño CSS3 corporativo con variables institucionales, grillas responsivas y soporte nativo para el switch **Comercial / Administrativo**.
+8. **`Scripts.html`** *(Fase 4)*: Motor de lógica JavaScript reactiva en el cliente, calculadoras instantáneas, formateador de WhatsApp y exportación a Excel/CSV.
+
+---
+
+### ⚙️ Configuración Recomendada para Ejecutar los Prompts
+
+* **Modelo:** **Gemini 1.5 Pro** / **Gemini 2.5 Flash** (ideal por su amplia ventana de contexto y alta precisión en código de Google Apps Script y Vanilla JS).
+* **Nivel de Pensamiento / Razonamiento:** **Alto** (garantiza minuciosidad en el acoplamiento de IDs entre el HTML y el JS).
+* **Formato de Entrega:** *Modular en bloques explicados* (para copiar y pegar archivo por archivo en el editor de Apps Script) o bien *Empaquetado en `.zip`* mediante script Python.
+
+¿Te gustaría que te prepare un instructivo paso a paso para desplegar estos 8 archivos directamente en **Google Apps Script** o que realicemos algún ajuste sobre alguno de los módulos? 🚀
+
+
+

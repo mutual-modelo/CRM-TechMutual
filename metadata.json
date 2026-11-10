@@ -1,0 +1,6 @@
+{
+  "name": "CRM & Backoffice Financiero — Asociación Mutual Modelo",
+  "description": "Sistema integral de gestión de asociados, ficha 360°, simuladores oficiales multilínea, ayudas económicas con refinanciación, comisiones, cesión de carteras con VPN, legajos Drive y exportación para Google Apps Script.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

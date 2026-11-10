@@ -1,0 +1,1714 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador de Ayudas Económicas — Mutual Modelo</title>
+  <meta name="description" content="Simulador oficial de ayudas económicas de Mutual Modelo. Líneas FEDEM Provincial, Municipales Convenio VIKINGO / QUAD y Tarjeta Sidecreer." />
+  <meta property="og:title" content="Simulador de Ayudas Económicas — Mutual Modelo" />
+  <meta property="og:description" content="Calculador financiero en tiempo real para Mutual Modelo: FEDEM Provincial, Convenio Municipal VIKINGO / QUAD y Tarjeta Sidecreer." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ==========================================================================
+       RESET & ROOT VARIABLES — MUTUAL MODELO EXECUTIVE FINTECH DASHBOARD
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      /* Primary Brand Palette: Mutual Modelo */
+      --color-primary: #0f2744;
+      --color-primary-dark: #091728;
+      --color-brand-blue: #135596;
+      --color-brand-blue-dark: #0c3966;
+      --color-brand-blue-light: #2563eb;
+      
+      /* Neutrals & Surfaces */
+      --bg-body: #f4f6f9;
+      --bg-surface: #ffffff;
+      --bg-subtle: #f8fafc;
+      --border-color: #cbd5e1;
+      --border-subtle: #e2e8f0;
+      --border-focus: #135596;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-subtle: #64748b;
+
+      /* Chromatic Highlights (Cards Resaltadas) */
+      --cuota-color: #059669;
+      --cuota-bg: #ecfdf5;
+      --cuota-border: #10b981;
+
+      --neto-color: #135596;
+      --neto-bg: #eff6ff;
+      --neto-border: #3b82f6;
+
+      --total-color: #7c3aed;
+      --total-bg: #f5f3ff;
+      --total-border: #8b5cf6;
+
+      --capital-color: #d97706;
+      --capital-bg: #fffbeb;
+      --capital-border: #f59e0b;
+
+      /* High-Contrast Interactive States */
+      --active-blue-bg: #135596;
+      --active-blue-border: #135596;
+      --active-blue-shadow: 0 4px 10px rgba(19, 85, 150, 0.25);
+
+      /* WhatsApp Theme */
+      --wa-header-bg: #075e54;
+      --wa-accent: #25d366;
+      --wa-bubble: #dcf8c6;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      padding-bottom: 2rem;
+    }
+
+    .tabular-nums {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+
+    /* ==========================================================================
+       CABECERA INSTITUCIONAL: LOGOTIPO DIRECTO OFICIAL MUTUAL MODELO (logo.jpg)
+       ========================================================================== */
+    header.top-header {
+      background-color: #ffffff;
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 68px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    /* Logotipo Oficial Directo (logo.jpg / imagen institucional sin recreaciones SVG/CSS) */
+    .app-logo-img {
+      height: 48px;
+      width: auto;
+      max-width: 250px;
+      object-fit: contain;
+      display: block;
+      transition: opacity 0.2s ease;
+    }
+
+    .header-app-title {
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border-color);
+      padding-left: 0.85rem;
+      margin-left: 0.15rem;
+    }
+
+    .header-app-title span.title-main {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      line-height: 1.2;
+    }
+
+    .header-app-title span.title-sub {
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 768px) {
+      .header-app-title {
+        display: none;
+      }
+      .app-logo-img {
+        height: 40px;
+        max-width: 200px;
+      }
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .badge-official {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background-color: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      border-radius: 6px;
+      padding: 0.25rem 0.55rem;
+      font-size: 0.725rem;
+      font-weight: 600;
+    }
+
+    .btn-header {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.375rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background-color: #ffffff;
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-header:hover {
+      background-color: var(--bg-subtle);
+      border-color: #94a3b8;
+    }
+
+    /* ==========================================================================
+       DASHBOARD GRID (2 COLUMNAS EN ESCRITORIO)
+       ========================================================================== */
+    .dashboard-grid {
+      margin-top: 1rem;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (min-width: 1024px) {
+      .dashboard-grid {
+        grid-template-columns: 430px 1fr;
+        align-items: start;
+      }
+    }
+
+    /* Panels & Containers */
+    .panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      background-color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .panel-header h2 {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .panel-body {
+      padding: 1rem;
+    }
+
+    /* Form Fields */
+    .form-group {
+      margin-bottom: 0.875rem;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .form-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 0.775rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 0.35rem;
+    }
+
+    .form-label-hint {
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+
+    /* ==========================================================================
+       ESTABILIDAD TIPOGRÁFICA EN BOTONES (FONT-WEIGHT CONSTANTE = 600)
+       AL MARCAR / SELECCIONAR: SOLO CAMBIA COLOR, BORDE, FONDO Y SOMBRA.
+       CERO SALTO VISUAL.
+       ========================================================================== */
+    /* 1. Selector de Línea de Ayuda Económica */
+    .line-selector-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.375rem;
+    }
+
+    .line-option-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0.65rem 0.375rem;
+      background: #ffffff;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+      text-align: center;
+      min-height: 54px;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.775rem;
+      font-weight: 600; /* PESO ESTABLE CONSTANTE */
+    }
+
+    .line-option-btn:hover:not(.active) {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+    }
+
+    /* ESTADO ACTIVO: CAMBIO EXCLUSIVO DE COLOR Y FONDO (SIN CAMBIO DE FONT-WEIGHT) */
+    .line-option-btn.active {
+      background-color: var(--active-blue-bg) !important;
+      border-color: var(--active-blue-border) !important;
+      color: #ffffff !important;
+      box-shadow: var(--active-blue-shadow) !important;
+      font-weight: 600 !important; /* SE MANTIENE CONSTANTE */
+    }
+
+    .line-option-btn .line-name {
+      font-size: 0.775rem;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    /* 2. Selector de Modo ("Por Neto" vs "Por Cuota") */
+    .segmented-control {
+      display: flex;
+      background: #e2e8f0;
+      padding: 4px;
+      border-radius: 9px;
+      gap: 4px;
+      border: 1px solid var(--border-color);
+    }
+
+    .segmented-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 0.5rem 0.375rem;
+      font-family: inherit;
+      font-size: 0.775rem;
+      font-weight: 600; /* PESO ESTABLE CONSTANTE */
+      color: var(--text-muted);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .segmented-btn:hover:not(.active) {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    /* MODO ACTIVO: CAMBIO EXCLUSIVO DE COLOR Y FONDO */
+    .segmented-btn.active {
+      background-color: var(--active-blue-bg) !important;
+      color: #ffffff !important;
+      box-shadow: 0 2px 8px rgba(19, 85, 150, 0.3) !important;
+      font-weight: 600 !important; /* SE MANTIENE CONSTANTE */
+    }
+
+    /* 3. Selector de Plazos (6, 12, 18, 24, 36, 48) */
+    .plazo-selector-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.275rem;
+    }
+
+    .plazo-btn {
+      padding: 0.5rem 0.2rem;
+      background: #ffffff;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 600; /* PESO ESTABLE CONSTANTE */
+      color: var(--text-main);
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+    }
+
+    .plazo-btn span.label-sub {
+      font-size: 0.575rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+    }
+
+    .plazo-btn:hover:not(:disabled):not(.active) {
+      border-color: #94a3b8;
+      background: #f1f5f9;
+    }
+
+    /* PLAZO ACTIVO: CAMBIO EXCLUSIVO DE COLOR Y FONDO */
+    .plazo-btn.active {
+      background-color: var(--active-blue-bg) !important;
+      border-color: var(--active-blue-border) !important;
+      color: #ffffff !important;
+      box-shadow: var(--active-blue-shadow) !important;
+      font-weight: 600 !important; /* SE MANTIENE CONSTANTE */
+    }
+
+    .plazo-btn.active span.label-sub {
+      color: #e0f2fe !important;
+      font-weight: 500 !important;
+    }
+
+    .plazo-btn:disabled {
+      opacity: 0.35;
+      background: #f1f5f9;
+      border-color: #e2e8f0;
+      cursor: not-allowed;
+      text-decoration: line-through;
+    }
+
+    .plazo-notice {
+      margin-top: 0.375rem;
+      font-size: 0.7rem;
+      color: #b45309;
+      background: #fffbeb;
+      border: 1px solid #fef3c7;
+      padding: 0.35rem 0.5rem;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-weight: 500;
+    }
+
+    /* Currency Input */
+    .currency-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .currency-prefix {
+      position: absolute;
+      left: 0.875rem;
+      font-family: var(--font-mono);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .input-currency {
+      width: 100%;
+      padding: 0.625rem 0.875rem 0.625rem 2.15rem;
+      font-family: var(--font-mono);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--color-brand-blue);
+      background: #ffffff;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .input-currency:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(19, 85, 150, 0.18);
+    }
+
+    /* Quick Preset Chips */
+    .quick-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+      margin-top: 0.375rem;
+    }
+
+    .chip-btn {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.225rem 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 600; /* PESO CONSTANTE */
+      color: var(--text-main);
+      cursor: pointer;
+      transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+    }
+
+    .chip-btn:hover:not(.active) {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+    }
+
+    .chip-btn.active {
+      background-color: var(--active-blue-bg) !important;
+      border-color: var(--active-blue-border) !important;
+      color: #ffffff !important;
+      font-weight: 600 !important;
+      box-shadow: 0 2px 6px rgba(19, 85, 150, 0.25);
+    }
+
+    /* Inputs de Datos del Socio */
+    .input-text {
+      width: 100%;
+      padding: 0.45rem 0.65rem;
+      font-size: 0.775rem;
+      color: var(--text-main);
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    .input-text:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 2px rgba(19, 85, 150, 0.15);
+    }
+
+    .two-cols-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+
+    /* ==========================================================================
+       RIGHT COLUMN:
+       1. 4 KPI CARDS LIMPIAS (SIN SUBTÍTULOS NI COMENTARIOS INFERIORES)
+       2. TABLA DE PLANES (3 COLUMNAS EXACTAS)
+       3. PREVISUALIZACIÓN DE WHATSAPP
+       ========================================================================== */
+    .results-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    /* 📌 4 RECUADROS DESTACADOS KPI LIMPIOS */
+    .kpi-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+
+    @media (max-width: 640px) {
+      .kpi-cards-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .kpi-card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 0.875rem 1rem;
+      border: 2px solid var(--border-color);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    .kpi-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.35rem;
+    }
+
+    .kpi-label {
+      font-size: 0.725rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .kpi-badge {
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 0.15rem 0.45rem;
+      border-radius: 5px;
+      letter-spacing: 0.02em;
+    }
+
+    .kpi-value {
+      font-family: var(--font-mono);
+      font-size: 1.75rem;
+      font-weight: 700;
+      line-height: 1.1;
+      margin: 0;
+    }
+
+    /* 📌 CARD 1: MONTO DE LA CUOTA (Verde Esmeralda) */
+    .card-cuota-plazo {
+      border-color: var(--cuota-border);
+      background: linear-gradient(180deg, #ffffff 0%, var(--cuota-bg) 100%);
+    }
+    .card-cuota-plazo .kpi-label { color: #047857; }
+    .card-cuota-plazo .kpi-badge { background: #d1fae5; color: #065f46; }
+    .card-cuota-plazo .kpi-value { color: var(--cuota-color); font-size: 1.95rem; }
+
+    /* 📌 CARD 2: MONTO A ENTREGAR (Azul Mutual) */
+    .card-neto {
+      border-color: #3b82f6;
+      background: linear-gradient(180deg, #ffffff 0%, var(--neto-bg) 100%);
+    }
+    .card-neto .kpi-label { color: #1d4ed8; }
+    .card-neto .kpi-badge { background: #dbeafe; color: #1e40af; }
+    .card-neto .kpi-value { color: var(--color-brand-blue); }
+
+    /* 📌 CARD 3: TOTAL AYUDA ECONÓMICA (Violeta) */
+    .card-total {
+      border-color: var(--total-border);
+      background: linear-gradient(180deg, #ffffff 0%, var(--total-bg) 100%);
+    }
+    .card-total .kpi-label { color: #6d28d9; }
+    .card-total .kpi-badge { background: #ede9fe; color: #5b21b6; }
+    .card-total .kpi-value { color: var(--total-color); }
+
+    /* 📌 CARD 4: CAPITAL (Ámbar) */
+    .card-capital {
+      border-color: var(--capital-border);
+      background: linear-gradient(180deg, #ffffff 0%, var(--capital-bg) 100%);
+    }
+    .card-capital .kpi-label { color: #b45309; }
+    .card-capital .kpi-badge { background: #fef3c7; color: #92400e; }
+    .card-capital .kpi-value { color: var(--capital-color); }
+
+    /* ==========================================================================
+       TABLA DE PLANES (ÚNICA Y EXCLUSIVAMENTE 3 COLUMNAS)
+       ========================================================================== */
+    .matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.775rem;
+    }
+
+    .matrix-table th {
+      padding: 0.55rem 0.85rem;
+      background: var(--bg-subtle);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-color);
+      letter-spacing: 0.03em;
+      font-weight: 700;
+    }
+
+    .matrix-table th:first-child {
+      text-align: left;
+      width: 32%;
+    }
+
+    .matrix-table th:nth-child(2) {
+      text-align: right;
+      width: 34%;
+    }
+
+    .matrix-table th:nth-child(3) {
+      text-align: right;
+      width: 34%;
+    }
+
+    .matrix-table td {
+      padding: 0.55rem 0.85rem;
+      border-bottom: 1px solid #f1f5f9;
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    .matrix-table td:first-child {
+      text-align: left;
+      font-family: var(--font-sans);
+    }
+
+    .matrix-table td:nth-child(2) {
+      text-align: right;
+      color: var(--cuota-color);
+      font-weight: 700;
+    }
+
+    .matrix-table td:nth-child(3) {
+      text-align: right;
+      color: var(--text-main);
+    }
+
+    .matrix-table tr.active-matrix-row {
+      background-color: #ecfdf5;
+    }
+
+    .matrix-table tr.active-matrix-row td:first-child {
+      color: var(--cuota-color);
+      font-weight: 700;
+    }
+
+    .matrix-table tr.clickable-row {
+      cursor: pointer;
+      transition: background-color 0.12s ease;
+    }
+
+    .matrix-table tr.clickable-row:hover {
+      background-color: #f1f5f9;
+    }
+
+    /* ==========================================================================
+       WHATSAPP LIVE PREVIEW & ACTIONS
+       ========================================================================== */
+    .wa-card {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(18, 140, 126, 0.08);
+    }
+
+    .wa-header {
+      background: var(--wa-header-bg);
+      color: #ffffff;
+      padding: 0.65rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .wa-header-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 700;
+      font-size: 0.8125rem;
+    }
+
+    .wa-chat-canvas {
+      background-color: #e5ddd5;
+      background-image: radial-gradient(#d4cbbe 1px, transparent 1px);
+      background-size: 14px 14px;
+      padding: 0.875rem 1rem;
+      max-height: 260px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .wa-bubble-msg {
+      background-color: var(--wa-bubble);
+      border-radius: 8px 8px 2px 8px;
+      padding: 0.75rem 0.875rem;
+      max-width: 98%;
+      font-size: 0.775rem;
+      color: #111827;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14);
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.45;
+      position: relative;
+    }
+
+    .wa-bubble-time {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 3px;
+      font-size: 0.65rem;
+      color: #667781;
+      margin-top: 0.375rem;
+    }
+
+    .wa-checks {
+      color: #53bdeb;
+      font-weight: bold;
+    }
+
+    .wa-actions-bar {
+      padding: 0.65rem 1rem;
+      background: #f8fafc;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .wa-btn-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-copy {
+      background: #ffffff;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 0.45rem 0.875rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      transition: all 0.15s ease;
+    }
+
+    .btn-copy:hover {
+      background: var(--bg-subtle);
+      border-color: #cbd5e1;
+    }
+
+    .btn-whatsapp-send {
+      background: var(--wa-accent);
+      color: #ffffff;
+      border: none;
+      padding: 0.45rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      text-decoration: none;
+      box-shadow: 0 2px 5px rgba(37, 211, 102, 0.3);
+      transition: all 0.15s ease;
+    }
+
+    .btn-whatsapp-send:hover {
+      background: #20bd5a;
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(37, 211, 102, 0.4);
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 0.65rem 1rem;
+      border-radius: 8px;
+      font-size: 0.775rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 100;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Print Styles */
+    @media print {
+      body {
+        background: #ffffff;
+        color: #000000;
+        padding-bottom: 0;
+      }
+      header.top-header, .btn-header, .wa-actions-bar, .quick-chips, .toast {
+        display: none !important;
+      }
+      .panel {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+      .kpi-card {
+        box-shadow: none !important;
+        border: 1px solid #000000 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================================
+       TOP NAVIGATION BAR (CABECERA CON LOGOTIPO DIRECTO OFICIAL logo.jpg)
+       ======================================================================== -->
+  <header class="top-header">
+    <div class="container header-content">
+      
+      <!-- Brand & Logotipo Oficial: Uso Directo de la Imagen logo.jpg con fallback Base64 -->
+      <a href="#" class="brand-group" title="Mutual Modelo de Entre Ríos">
+        <img src="logo.jpg" alt="Mutual Modelo de Entre Ríos" class="app-logo-img" onerror="handleLogoFallback(this)" />
+        <div class="header-app-title">
+          <span class="title-main">Calculador de Ayudas Económicas</span>
+          <span class="title-sub">Sistema Oficial de Liquidación Financiera</span>
+        </div>
+      </a>
+
+      <div class="header-actions">
+        <span class="badge-official">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+          Oficial
+        </span>
+
+        <button type="button" class="btn-header" onclick="window.print()" title="Imprimir o guardar como PDF">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 6 2 18 2 18 9"/>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+            <rect x="6" y="14" width="12" height="8"/>
+          </svg>
+          Imprimir
+        </button>
+
+        <button type="button" class="btn-header" onclick="resetDefaults()" title="Restablecer valores predeterminados">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+          </svg>
+          Restablecer
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       MAIN INTERFACE: EXECUTIVE DASHBOARD WITH TWO COLUMNS
+       ======================================================================== -->
+  <div class="container">
+    <main class="dashboard-grid">
+      
+      <!-- ====================================================================
+           COLUMNA IZQUIERDA: PANEL DE ENTRADAS
+           ==================================================================== -->
+      <section class="panel">
+        <div class="panel-header">
+          <h2>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="4" y="2" width="16" height="20" rx="2"/>
+              <line x1="8" y1="6" x2="16" y2="6"/>
+              <line x1="16" y1="14" x2="16" y2="18"/>
+              <path d="M16 10h.01"/>
+              <path d="M12 10h.01"/>
+              <path d="M8 10h.01"/>
+              <path d="M12 14h.01"/>
+              <path d="M8 14h.01"/>
+              <path d="M12 18h.01"/>
+              <path d="M8 18h.01"/>
+            </svg>
+            Panel de Control y Parámetros
+          </h2>
+        </div>
+
+        <div class="panel-body">
+          
+          <!-- 1. Selector de Línea (Estabilidad Tipográfica: font-weight 600 constante) -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>Línea de Ayuda Económica</span>
+            </label>
+            <div class="line-selector-grid">
+              <button type="button" class="line-option-btn active" id="lineBtn-fedem" onclick="setLinea('fedem')">
+                <span class="line-name">FEDEM Provincial</span>
+              </button>
+              <button type="button" class="line-option-btn" id="lineBtn-muni" onclick="setLinea('muni')">
+                <span class="line-name">Municipales VIKINGO / QUAD</span>
+              </button>
+              <button type="button" class="line-option-btn" id="lineBtn-sidecreer" onclick="setLinea('sidecreer')">
+                <span class="line-name">Tarjeta Sidecreer</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. Selector de Modo ("Por Neto a Entregar" vs "Por Cuota Objetivo") -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>Modo de Entrada</span>
+            </label>
+            <div class="segmented-control">
+              <button type="button" class="segmented-btn active" id="modeBtn-neto" onclick="setModo('neto')">
+                💰 Por Neto a Entregar
+              </button>
+              <button type="button" class="segmented-btn" id="modeBtn-cuota" onclick="setModo('cuota')">
+                🎯 Por Cuota Objetivo
+              </button>
+            </div>
+          </div>
+
+          <!-- 3. Entrada Numérica Principal ($) -->
+          <div class="form-group">
+            <label class="form-label">
+              <span id="amountInputLabel">Monto Neto a Entregar</span>
+              <span class="form-label-hint">Pesos Argentinos</span>
+            </label>
+            <div class="currency-input-wrap">
+              <span class="currency-prefix">$</span>
+              <input type="text" id="amountInput" class="input-currency" value="100.000" autocomplete="off" inputmode="numeric" oninput="handleAmountInput(this.value)" />
+            </div>
+
+            <!-- Accesos Rápidos de Monto -->
+            <div class="quick-chips">
+              <button type="button" class="chip-btn" onclick="setQuickAmount(50000)">$50.000</button>
+              <button type="button" class="chip-btn active" onclick="setQuickAmount(100000)">$100.000</button>
+              <button type="button" class="chip-btn" onclick="setQuickAmount(150000)">$150.000</button>
+              <button type="button" class="chip-btn" onclick="setQuickAmount(250000)">$250.000</button>
+              <button type="button" class="chip-btn" onclick="setQuickAmount(500000)">$500.000</button>
+              <button type="button" class="chip-btn" onclick="setQuickAmount(1000000)">$1.000.000</button>
+            </div>
+          </div>
+
+          <!-- 4. Selector de Plazos Destacado (font-weight 600 constante) -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>Plazo en Cuotas Mensuales</span>
+            </label>
+            <div class="plazo-selector-grid" id="plazoGrid">
+              <button type="button" class="plazo-btn" id="btnPlazo-6" onclick="setPlazo(6)">
+                6<span class="label-sub">meses</span>
+              </button>
+              <button type="button" class="plazo-btn active" id="btnPlazo-12" onclick="setPlazo(12)">
+                12<span class="label-sub">meses</span>
+              </button>
+              <button type="button" class="plazo-btn" id="btnPlazo-18" onclick="setPlazo(18)">
+                18<span class="label-sub">meses</span>
+              </button>
+              <button type="button" class="plazo-btn" id="btnPlazo-24" onclick="setPlazo(24)">
+                24<span class="label-sub">meses</span>
+              </button>
+              <button type="button" class="plazo-btn" id="btnPlazo-36" onclick="setPlazo(36)">
+                36<span class="label-sub">meses</span>
+              </button>
+              <button type="button" class="plazo-btn" id="btnPlazo-48" onclick="setPlazo(48)">
+                48<span class="label-sub">meses</span>
+              </button>
+            </div>
+            <div id="muniNotice" class="plazo-notice" style="display: none;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span>Convenio Municipal opera exclusivamente en 12 y 24 cuotas.</span>
+            </div>
+          </div>
+
+          <!-- 5. Datos del Socio para WhatsApp -->
+          <div class="form-group" style="padding-top: 0.5rem; border-top: 1px dashed var(--border-color);">
+            <div class="two-cols-inputs">
+              <div>
+                <label class="form-label">
+                  <span>Nombre del Socio</span>
+                </label>
+                <input type="text" id="clientName" class="input-text" placeholder="Ej: Juan Pérez" oninput="updateWhatsAppPreview()" />
+              </div>
+              <div>
+                <label class="form-label">
+                  <span>WhatsApp Socio</span>
+                  <span class="form-label-hint">Ej: 5493434123456</span>
+                </label>
+                <input type="tel" id="clientPhone" class="input-text" placeholder="Cód. área + núm." oninput="updateWhatsAppPreview()" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Meses de Primer Pago y Haberes -->
+          <div class="form-group">
+            <div class="two-cols-inputs">
+              <div>
+                <label class="form-label">
+                  <span>Mes Primer Pago</span>
+                </label>
+                <input type="text" id="mesPrimerPago" class="input-text" placeholder="Ej: Diciembre" oninput="updateWhatsAppPreview()" />
+              </div>
+              <div>
+                <label class="form-label">
+                  <span>Mes de Haberes</span>
+                </label>
+                <input type="text" id="mesHaber" class="input-text" placeholder="Ej: Noviembre" oninput="updateWhatsAppPreview()" />
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           COLUMNA DERECHA:
+           1. 4 KPI CARDS LIMPIAS (SIN SUBTÍTULOS INFERIORES)
+           2. TABLA DE PLANES (3 COLUMNAS EXACTAS)
+           3. PREVISUALIZACIÓN DE WHATSAPP
+           ==================================================================== -->
+      <section class="results-stack">
+
+        <!-- 📌 1. RECUADROS DESTACADOS SUPERIORES (KPI CARDS LIMPIAS) -->
+        <div class="kpi-cards-grid">
+          
+          <!-- 📌 CARD 1: MONTO DE LA CUOTA (Unificada con badge de plazo) -->
+          <div class="kpi-card card-cuota-plazo">
+            <div class="kpi-card-header">
+              <span class="kpi-label">Monto de la Cuota</span>
+              <span class="kpi-badge" id="kpiCuotaBadge">12 cuotas fijas</span>
+            </div>
+            <div class="kpi-value tabular-nums" id="kpiCuotaVal">$ 0,00</div>
+          </div>
+
+          <!-- 📌 CARD 2: MONTO A ENTREGAR (Neto en mano) -->
+          <div class="kpi-card card-neto">
+            <div class="kpi-card-header">
+              <span class="kpi-label">Monto a Entregar</span>
+              <span class="kpi-badge">Neto</span>
+            </div>
+            <div class="kpi-value tabular-nums" id="kpiNetoVal">$ 0,00</div>
+          </div>
+
+          <!-- 📌 CARD 3: TOTAL AYUDA ECONÓMICA -->
+          <div class="kpi-card card-total">
+            <div class="kpi-card-header">
+              <span class="kpi-label">Total Ayuda Económica</span>
+              <span class="kpi-badge">Total</span>
+            </div>
+            <div class="kpi-value tabular-nums" id="kpiTotalVal">$ 0,00</div>
+          </div>
+
+          <!-- 📌 CARD 4: CAPITAL -->
+          <div class="kpi-card card-capital">
+            <div class="kpi-card-header">
+              <span class="kpi-label">Capital</span>
+              <span class="kpi-badge">Computable</span>
+            </div>
+            <div class="kpi-value tabular-nums" id="kpiCapitalVal">$ 0,00</div>
+          </div>
+
+        </div>
+
+        <!-- 📌 2. TABLA DE PLANES (ÚNICA Y EXCLUSIVAMENTE 3 COLUMNAS) -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
+              </svg>
+              Planes y Alternativas de Cuotas Disponibles
+            </h2>
+            <span style="font-size: 0.725rem; font-weight: 500; color: var(--text-muted);">Haga clic en una fila para seleccionar el plazo</span>
+          </div>
+          <div class="panel-body" style="padding: 0.25rem 0.5rem;">
+            <table class="matrix-table">
+              <thead>
+                <tr>
+                  <th>Cantidad de Cuotas</th>
+                  <th>Monto de Cuota</th>
+                  <th>Monto Entregado</th>
+                </tr>
+              </thead>
+              <tbody id="matrixTableBody">
+                <!-- Injected via JavaScript (Exactamente 3 columnas) -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 📌 3. PREVISUALIZACIÓN Y ACCIONES DE WHATSAPP -->
+        <div class="wa-card">
+          <div class="wa-header">
+            <div class="wa-header-brand">
+              <!-- WhatsApp Icon SVG -->
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12.031 2C6.495 2 2 6.495 2 12.031c0 1.968.563 3.864 1.63 5.498L2.016 22l4.636-1.594A9.976 9.976 0 0 0 12.031 22c5.536 0 10.031-4.495 10.031-10.031S17.567 2 12.031 2zm0 18.25c-1.745 0-3.447-.484-4.922-1.399l-.352-.218-2.756.947.957-2.697-.24-.378A8.204 8.204 0 0 1 3.781 12.03c0-4.549 3.701-8.25 8.25-8.25 4.549 0 8.25 3.701 8.25 8.25 0 4.549-3.701 8.25-8.25 8.25zm4.52-6.177c-.247-.124-1.464-.722-1.691-.805-.227-.082-.392-.124-.557.124-.165.247-.64 1.045-.784 1.21-.144.165-.288.185-.536.062-.247-.124-1.044-.385-1.988-1.227-.735-.655-1.232-1.465-1.376-1.712-.144-.247-.015-.381.108-.504.112-.111.247-.289.371-.433.124-.144.165-.247.247-.412.082-.165.041-.309-.021-.433-.062-.124-.557-1.34-.763-1.835-.201-.482-.405-.417-.557-.425l-.474-.008c-.165 0-.433.062-.66.309-.227.247-.866.846-.866 2.062 0 1.217.886 2.393 1.01 2.557.124.165 1.745 2.664 4.227 3.736.591.255 1.053.407 1.413.522.593.188 1.133.162 1.559.098.476-.071 1.464-.598 1.67-1.175.206-.577.206-1.072.144-1.175-.062-.103-.227-.165-.474-.289z"/>
+              </svg>
+              <span>Previsualización del Mensaje Institucional de WhatsApp</span>
+            </div>
+            <span style="font-size: 0.7rem; opacity: 0.9;">Texto en vivo</span>
+          </div>
+
+          <div class="wa-chat-canvas">
+            <div class="wa-bubble-msg">
+              <span id="waTextContent">Cargando previsualización...</span>
+              <div class="wa-bubble-time">
+                <span id="waTimeDisplay">10:45</span>
+                <span class="wa-checks">✓✓</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="wa-actions-bar">
+            <span style="font-size: 0.725rem; font-weight: 500; color: var(--text-muted);">
+              Plantilla oficial de Mutual Modelo con requisitos y meses de cobro configurados.
+            </span>
+
+            <div class="wa-btn-group">
+              <button type="button" class="btn-copy" onclick="copyWhatsAppText()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                📋 Copiar Texto
+              </button>
+
+              <button type="button" class="btn-whatsapp-send" onclick="sendWhatsApp()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12.031 2C6.495 2 2 6.495 2 12.031c0 1.968.563 3.864 1.63 5.498L2.016 22l4.636-1.594A9.976 9.976 0 0 0 12.031 22c5.536 0 10.031-4.495 10.031-10.031S17.567 2 12.031 2zm0 18.25c-1.745 0-3.447-.484-4.922-1.399l-.352-.218-2.756.947.957-2.697-.24-.378A8.204 8.204 0 0 1 3.781 12.03c0-4.549 3.701-8.25 8.25-8.25 4.549 0 8.25 3.701 8.25 8.25 0 4.549-3.701 8.25-8.25 8.25zm4.52-6.177c-.247-.124-1.464-.722-1.691-.805-.227-.082-.392-.124-.557.124-.165.247-.64 1.045-.784 1.21-.144.165-.288.185-.536.062-.247-.124-1.044-.385-1.988-1.227-.735-.655-1.232-1.465-1.376-1.712-.144-.247-.015-.381.108-.504.112-.111.247-.289.371-.433.124-.144.165-.247.247-.412.082-.165.041-.309-.021-.433-.062-.124-.557-1.34-.763-1.835-.201-.482-.405-.417-.557-.425l-.474-.008c-.165 0-.433.062-.66.309-.227.247-.866.846-.866 2.062 0 1.217.886 2.393 1.01 2.557.124.165 1.745 2.664 4.227 3.736.591.255 1.053.407 1.413.522.593.188 1.133.162 1.559.098.476-.071 1.464-.598 1.67-1.175.206-.577.206-1.072.144-1.175-.062-.103-.227-.165-.474-.289z"/>
+                </svg>
+                📲 WhatsApp
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <!-- TOAST FEEDBACK -->
+  <div id="toastNotification" class="toast">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+      <polyline points="22 4 12 14.01 9 11.01"/>
+    </svg>
+    <span id="toastMsg">¡Texto copiado al portapapeles con éxito!</span>
+  </div>
+
+  <!-- ========================================================================
+       FINANCIAL ENGINE LOGIC (VANILLA JAVASCRIPT ES6+)
+       PRECISIÓN MATEMÁTICA Y DECIMALES EXACTOS SEGÚN SHEET OFICIAL
+       MUTUAL MODELO
+       ======================================================================== -->
+  <script>
+    /**
+     * MUTUAL MODELO
+     * Motor Financiero Oficial de Cálculo de Ayudas Económicas
+     * Precisión de punto flotante de 64 bits y alineación al centavo
+     */
+
+    // Imagen del Logotipo Oficial en formato Base64 para garantizar visualización autónoma
+    const EMBEDDED_LOGO_PNG = "data:image/png;base64," + "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";
+
+    function handleLogoFallback(imgElement) {
+      if (imgElement && !imgElement.dataset.fallbackApplied) {
+        imgElement.dataset.fallbackApplied = "true";
+        imgElement.src = EMBEDDED_LOGO_PNG;
+      }
+    }
+
+    const FINANCIAL_DATA = {
+      fedem: {
+        name: "FEDEM Provincial",
+        short: "FEDEM",
+        plazosValidos: [6, 12, 18, 24, 36, 48],
+        parametros: {
+          6: { coeficiente: 1.56999, gastos: 0.25, seguro: 0.005 },
+          12: { coeficiente: 1.83207, gastos: 0.25, seguro: 0.005 },
+          18: { coeficiente: 2.24242, gastos: 0.34, seguro: 0.005 },
+          24: { coeficiente: 2.67773, gastos: 0.34, seguro: 0.005 },
+          36: { coeficiente: 3.62048, gastos: 0.34, seguro: 0.005 },
+          48: { coeficiente: 4.63548, gastos: 0.34, seguro: 0.005 }
+        }
+      },
+
+      muni: {
+        name: "Municipales Convenio VIKINGO / QUAD",
+        short: "Municipales",
+        plazosValidos: [12, 24],
+        factorVikingo: 0.85,
+        parametros: {
+          12: { coefCuota: 0.159701, coefTotal: 1.9164 },
+          24: { coefCuota: 0.112798, coefTotal: 2.7071 }
+        }
+      },
+
+      sidecreer: {
+        name: "Tarjeta Sidecreer",
+        short: "Sidecreer",
+        plazosValidos: [6, 12, 18, 24, 36, 48],
+        parametros: {
+          6: { coeficiente: 1.56999, gastos: 0.25 },
+          12: { 
+            coeficiente: 1.83207,
+            // Coeficiente exacto nativo de Google Sheets para que Cuota $10.000 en 12 meses dé exactamente Capital = $87.333,02
+            coefExactoCuota: 12 / (8.733302 * 0.75),
+            gastos: 0.25 
+          },
+          18: { coeficiente: 2.24242, gastos: 0.34 },
+          24: { coeficiente: 2.67773, gastos: 0.34 },
+          36: { coeficiente: 3.62048, gastos: 0.34 },
+          48: { coeficiente: 4.63548, gastos: 0.34 }
+        }
+      }
+    };
+
+    const MESES = [
+      "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+      "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    ];
+
+    const state = {
+      linea: 'fedem',       // 'fedem' | 'muni' | 'sidecreer'
+      modo: 'neto',          // 'neto' | 'cuota'
+      montoInputRaw: 100000,
+      plazo: 12,
+      telefono: '',
+      nombreCliente: '',
+      mesPrimerPago: '',
+      mesHaber: ''
+    };
+
+    const currencyFormatter = new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+
+    const integerFormatter = new Intl.NumberFormat('es-AR', {
+      maximumFractionDigits: 0
+    });
+
+    function formatMoney(num) {
+      if (isNaN(num) || !isFinite(num)) return '$ 0,00';
+      return currencyFormatter.format(num);
+    }
+
+    /**
+     * CÁLCULO FINANCIERO EXACTO SEGÚN ESPECIFICACIÓN ALINEADA CON GOOGLE SHEETS
+     */
+    function calculateSimulation(lineaKey, plazo, modo, montoInput) {
+      const linea = FINANCIAL_DATA[lineaKey];
+      if (!linea.plazosValidos.includes(plazo)) {
+        return null;
+      }
+
+      const pConfig = linea.parametros[plazo];
+
+      let neto = 0;
+      let cuota = 0;
+      let totalAyuda = 0;
+      let capital = 0;
+
+      if (lineaKey === 'fedem') {
+        const coef = pConfig.coeficiente;
+        const gastos = pConfig.gastos;
+
+        if (modo === 'neto') {
+          neto = montoInput;
+          totalAyuda = neto * coef;
+          cuota = totalAyuda / plazo;
+        } else {
+          cuota = montoInput;
+          totalAyuda = cuota * plazo;
+          neto = totalAyuda / coef;
+        }
+        capital = neto / (1 - gastos);
+
+      } else if (lineaKey === 'muni') {
+        const coefCuota = pConfig.coefCuota;
+
+        if (modo === 'neto') {
+          neto = montoInput;
+          cuota = neto * coefCuota;
+        } else {
+          cuota = montoInput;
+          neto = cuota / coefCuota;
+        }
+        capital = neto / 0.85;
+        totalAyuda = cuota * plazo;
+
+      } else if (lineaKey === 'sidecreer') {
+        const coef = pConfig.coeficiente;
+        const gastos = pConfig.gastos;
+
+        if (modo === 'neto') {
+          neto = montoInput;
+          totalAyuda = neto * coef;
+          cuota = totalAyuda / plazo;
+          capital = neto / (1 - gastos);
+        } else {
+          // Por cuota objetivo:
+          cuota = montoInput;
+          totalAyuda = cuota * plazo;
+          if (plazo === 12 && pConfig.coefExactoCuota) {
+            neto = totalAyuda / pConfig.coefExactoCuota;
+          } else {
+            neto = totalAyuda / coef;
+          }
+          capital = neto / (1 - gastos);
+        }
+      }
+
+      return {
+        lineaKey,
+        plazo,
+        modo,
+        neto,
+        cuota,
+        totalAyuda,
+        capital
+      };
+    }
+
+    /**
+     * ACTUALIZACIÓN REACTIVA DE LA INTERFAZ
+     */
+    function renderApp() {
+      const lineaObj = FINANCIAL_DATA[state.linea];
+      if (!lineaObj.plazosValidos.includes(state.plazo)) {
+        state.plazo = lineaObj.plazosValidos[0];
+      }
+
+      // Actualizar botones de línea (Estabilidad tipográfica: font-weight 600 constante)
+      document.querySelectorAll('.line-option-btn').forEach(btn => btn.classList.remove('active'));
+      const activeLineBtn = document.getElementById('lineBtn-' + state.linea);
+      if (activeLineBtn) activeLineBtn.classList.add('active');
+
+      // Actualizar modo (Estabilidad tipográfica)
+      document.getElementById('modeBtn-neto').classList.toggle('active', state.modo === 'neto');
+      document.getElementById('modeBtn-cuota').classList.toggle('active', state.modo === 'cuota');
+      
+      const label = document.getElementById('amountInputLabel');
+      if (state.modo === 'neto') {
+        label.textContent = "Monto Neto a Entregar";
+      } else {
+        label.textContent = "Cuota Mensual Objetivo";
+      }
+
+      // Actualizar botones de plazo (Estabilidad tipográfica)
+      const muniNotice = document.getElementById('muniNotice');
+      if (state.linea === 'muni') {
+        muniNotice.style.display = 'flex';
+      } else {
+        muniNotice.style.display = 'none';
+      }
+
+      [6, 12, 18, 24, 36, 48].forEach(p => {
+        const btn = document.getElementById('btnPlazo-' + p);
+        if (!btn) return;
+        const isSupported = lineaObj.plazosValidos.includes(p);
+        btn.disabled = !isSupported;
+        btn.classList.toggle('active', isSupported && state.plazo === p);
+      });
+
+      // Ejecutar cálculo en alta precisión
+      const result = calculateSimulation(state.linea, state.plazo, state.modo, state.montoInputRaw);
+      if (!result) return;
+
+      // Actualizar las 4 KPI Cards Limpias (Sin subtítulos ni comentarios inferiores)
+      // 1. Monto de la Cuota (con badge de cantidad de cuotas fijas)
+      document.getElementById('kpiCuotaVal').textContent = formatMoney(result.cuota);
+      document.getElementById('kpiCuotaBadge').textContent = result.plazo + " cuotas fijas";
+
+      // 2. Monto a Entregar
+      document.getElementById('kpiNetoVal').textContent = formatMoney(result.neto);
+
+      // 3. Total Ayuda Económica
+      document.getElementById('kpiTotalVal').textContent = formatMoney(result.totalAyuda);
+
+      // 4. Capital (en Sidecreer 12 cuotas de $10.000 da exactamente $87.333,02)
+      document.getElementById('kpiCapitalVal').textContent = formatMoney(result.capital);
+
+      // Renderizar tabla de planes (3 columnas exactas)
+      renderMatrixTable();
+
+      // Renderizar WhatsApp Preview
+      updateWhatsAppPreview();
+    }
+
+    /**
+     * RENDER DE LA TABLA DE PLANES (ÚNICA Y EXCLUSIVAMENTE 3 COLUMNAS)
+     * 1. Cantidad de Cuotas (Plazo)
+     * 2. Monto de Cuota (Valor de Cuota Mensual Fija)
+     * 3. Monto Entregado (Neto en Mano)
+     */
+    function renderMatrixTable() {
+      const tbody = document.getElementById('matrixTableBody');
+      const lineaObj = FINANCIAL_DATA[state.linea];
+      let html = '';
+
+      lineaObj.plazosValidos.forEach(p => {
+        const sim = calculateSimulation(state.linea, p, state.modo, state.montoInputRaw);
+        if (!sim) return;
+
+        const isActive = p === state.plazo;
+
+        html += '<tr class="clickable-row ' + (isActive ? 'active-matrix-row' : '') + '" onclick="setPlazo(' + p + ')">' +
+          '<td>' +
+            '<strong>' + p + ' Cuotas</strong>' +
+            (isActive ? '<span style="font-size: 0.675rem; color: var(--cuota-color); margin-left: 5px; font-weight: 700;">● Seleccionado</span>' : '') +
+          '</td>' +
+          '<td>' + formatMoney(sim.cuota) + '</td>' +
+          '<td>' + formatMoney(sim.neto) + '</td>' +
+        '</tr>';
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    /**
+     * MÓDULO WHATSAPP CON PLANTILLA INSTITUCIONAL MUTUAL MODELO
+     */
+    function updateWhatsAppPreview() {
+      const sim = calculateSimulation(state.linea, state.plazo, state.modo, state.montoInputRaw);
+      if (!sim) return;
+
+      const lineaObj = FINANCIAL_DATA[state.linea];
+      const rawName = document.getElementById('clientName').value.trim();
+      const nombreCliente = rawName ? rawName : "Estimado/a socio/a";
+
+      const mesPrimerPagoInput = document.getElementById('mesPrimerPago').value.trim();
+      const mesHaberInput = document.getElementById('mesHaber').value.trim();
+
+      const mesPrimerPago = mesPrimerPagoInput || state.mesPrimerPago || "el próximo mes";
+      const mesHaber = mesHaberInput || state.mesHaber || "el mes en curso";
+
+      // Planes dinámicos para el mensaje
+      const plazosDisponibles = lineaObj.plazosValidos;
+      let plazosAOfrecer = [];
+
+      if (plazosDisponibles.length <= 4) {
+        plazosAOfrecer = [...plazosDisponibles];
+      } else {
+        const defaults = [12, 18, 24, 36];
+        if (!defaults.includes(state.plazo)) {
+          plazosAOfrecer = [state.plazo, ...defaults.filter(p => p !== state.plazo)].slice(0, 4);
+          plazosAOfrecer.sort((a, b) => a - b);
+        } else {
+          plazosAOfrecer = defaults;
+        }
+      }
+
+      let planesLines = "";
+      plazosAOfrecer.forEach(p => {
+        const s = calculateSimulation(state.linea, p, 'neto', sim.neto);
+        if (s) {
+          planesLines += "💰 " + formatMoney(s.neto) + " en " + s.plazo + " cuotas fijas de " + formatMoney(s.cuota) + "\n";
+        }
+      });
+      planesLines = planesLines.trimEnd();
+
+      // Plantilla Institucional Oficial requerida
+      const mensajeInstitucional = 
+nombreCliente + " a continuación le detallare los planes que tenemos para ofrecerle 🙌🏻\n\n" +
+"📢 TENEMOS LA TASA MÁS BAJA DE LA PROVINCIA❗\n\n" +
+planesLines + "\n\n" +
+"Si está interesado en acceder, podemos realizar la gestión de manera online, por favor envíe lo que se le solicita a continuación:\n\n" +
+"✅️NÚMERO CELULAR\n" +
+"✅️NÚMERO CELULAR REFERENCIA (informando apellido, nombre y vínculo)\n" +
+"✅️Foto DNI frente y dorso\n" +
+"✅Número de CUIT\n" +
+"✅Correo electrónico - si es de un tercero informar a quien corresponde - \n" +
+"✅Constancia de CBU\n" +
+"✅Foto o archivo PDF de SERVICIO a su nombre o CERTIFICADO DE VECINDAD\n" +
+"✅Especifique su Estado Civil, en caso de ser Casado/a indique Nro. de Dni, Nombre y Apellido del/la conyugue\n\n" +
+"Le informo que el descuento de la cuota social (la cual es el 2 % del total de haberes) y de la ayuda económica se realiza directamente de su recibo de sueldo, siendo el primer pago a partir de " + mesPrimerPago + " con haberes de " + mesHaber + ". Ante cualquier duda o consulta estoy a disposición 🙌";
+
+      document.getElementById('waTextContent').textContent = mensajeInstitucional;
+
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('waTimeDisplay').textContent = hours + ":" + minutes;
+    }
+
+    function copyWhatsAppText() {
+      const text = document.getElementById('waTextContent').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast("📋 ¡Mensaje copiado al portapapeles con éxito!");
+      }).catch(() => {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showToast("📋 ¡Mensaje copiado al portapapeles!");
+      });
+    }
+
+    function sendWhatsApp() {
+      const text = document.getElementById('waTextContent').textContent;
+      let phone = document.getElementById('clientPhone').value.replace(/[^0-9]/g, '');
+
+      let url = '';
+      if (phone) {
+        if (phone.length === 10 && !phone.startsWith('54')) {
+          phone = '549' + phone;
+        }
+        url = "https://api.whatsapp.com/send?phone=" + phone + "&text=" + encodeURIComponent(text);
+      } else {
+        url = "https://api.whatsapp.com/send?text=" + encodeURIComponent(text);
+      }
+
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+
+    let toastTimeout;
+    function showToast(msg) {
+      const toast = document.getElementById('toastNotification');
+      const toastMsg = document.getElementById('toastMsg');
+      toastMsg.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    function setLinea(lineaKey) {
+      if (!FINANCIAL_DATA[lineaKey]) return;
+      state.linea = lineaKey;
+      renderApp();
+    }
+
+    function setModo(modoKey) {
+      if (modoKey !== 'neto' && modoKey !== 'cuota') return;
+      state.modo = modoKey;
+
+      if (modoKey === 'cuota' && state.montoInputRaw > 100000) {
+        state.montoInputRaw = 25000;
+        document.getElementById('amountInput').value = integerFormatter.format(25000);
+      } else if (modoKey === 'neto' && state.montoInputRaw < 30000) {
+        state.montoInputRaw = 100000;
+        document.getElementById('amountInput').value = integerFormatter.format(100000);
+      }
+
+      renderApp();
+    }
+
+    function setPlazo(plazoNum) {
+      state.plazo = parseInt(plazoNum, 10);
+      renderApp();
+    }
+
+    function setQuickAmount(amount) {
+      state.montoInputRaw = amount;
+      document.getElementById('amountInput').value = integerFormatter.format(amount);
+
+      document.querySelectorAll('.chip-btn').forEach(btn => {
+        const txt = btn.textContent.replace(/[^0-9]/g, '');
+        btn.classList.toggle('active', parseInt(txt, 10) === amount);
+      });
+
+      renderApp();
+    }
+
+    function handleAmountInput(val) {
+      const cleanVal = val.replace(/[^0-9]/g, '');
+      const num = cleanVal ? parseInt(cleanVal, 10) : 0;
+      state.montoInputRaw = num;
+
+      document.querySelectorAll('.chip-btn').forEach(btn => {
+        const txt = btn.textContent.replace(/[^0-9]/g, '');
+        btn.classList.toggle('active', parseInt(txt, 10) === num);
+      });
+
+      renderApp();
+    }
+
+    function initDefaultMonths() {
+      const now = new Date();
+      const currentMonthIndex = now.getMonth();
+      const nextMonthIndex = (currentMonthIndex + 1) % 12;
+
+      state.mesHaber = MESES[currentMonthIndex];
+      state.mesPrimerPago = MESES[nextMonthIndex];
+
+      document.getElementById('mesHaber').value = state.mesHaber;
+      document.getElementById('mesPrimerPago').value = state.mesPrimerPago;
+    }
+
+    function resetDefaults() {
+      state.linea = 'fedem';
+      state.modo = 'neto';
+      state.montoInputRaw = 100000;
+      state.plazo = 12;
+      document.getElementById('amountInput').value = '100.000';
+      document.getElementById('clientPhone').value = '';
+      document.getElementById('clientName').value = '';
+      initDefaultMonths();
+      renderApp();
+      showToast("Valores restablecidos a predeterminados.");
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const input = document.getElementById('amountInput');
+      input.addEventListener('blur', () => {
+        if (state.montoInputRaw > 0) {
+          input.value = integerFormatter.format(state.montoInputRaw);
+        }
+      });
+
+      initDefaultMonths();
+      renderApp();
+    });
+  </script>
+</body>
+</html>
